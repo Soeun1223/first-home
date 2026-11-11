@@ -256,3 +256,6 @@ sup.src a { text-decoration: none; font-weight: 700; padding: 0 3px; margin-left
 /* 좁은 화면: 등기부 표는 상자 안에서 가로로 스크롤하고, 날짜는 한 줄로 */
 .reg { min-width: 560px; }
 .reg td.num { white-space: nowrap; }
+
+/* 로고: 초록 집 */
+.brand .logo { width: 26px; height: 26px; fill: var(--accent); flex: none; }
