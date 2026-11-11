@@ -5,253 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>처음이라, 내 집</title>
 <meta name="description" content="계약 예정일과 입주일을 넣으면 사회초년생에게 필요한 주거 계약 절차를 날짜순으로 정리하는 AI 주거 계약 가이드 (공모전 PoC 목업)">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;800&display=swap">
-<style>
-/* 레이아웃: 왼쪽 '내 계약 정보' 카드(데스크톱에서 고정) + 오른쪽 날짜순 타임라인, 그 아래 STEP 1~4, 용어집, 출처 */
-:root {
-  --paper: #f5f6f2;
-  --card: #ffffff;
-  --ink: #17212a;
-  --muted: #5a6670;
-  --line: #d8dcd3;
-  --accent: #1d5c57;
-  --accent-soft: #e2eeec;
-  --seal: #b3352b;
-  --seal-soft: #f8e6e3;
-  --warn: #9a6512;
-  --warn-soft: #f7edd9;
-  --ok: #2c6e45;
-  --ok-soft: #e1f0e6;
-  --display: "Noto Serif KR", "Apple SD Gothic Neo", serif;
-  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #11171b; --card: #182026; --ink: #e6ebe8; --muted: #9ba7ae; --line: #2b353c;
-    --accent: #6cbab0; --accent-soft: #1c3331; --seal: #f08377; --seal-soft: #3a2220;
-    --warn: #e3b35c; --warn-soft: #3a2f1b; --ok: #79c795; --ok-soft: #1c3325; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #11171b; --card: #182026; --ink: #e6ebe8; --muted: #9ba7ae; --line: #2b353c;
-  --accent: #6cbab0; --accent-soft: #1c3331; --seal: #f08377; --seal-soft: #3a2220;
-  --warn: #e3b35c; --warn-soft: #3a2f1b; --ok: #79c795; --ok-soft: #1c3325; color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-body {
-  margin: 0; background: var(--paper); color: var(--ink);
-  font: 15px/1.7 var(--body); word-break: keep-all; overflow-wrap: anywhere;
-}
-a { color: var(--accent); }
-h1, h2, h3 { font-family: var(--display); line-height: 1.3; text-wrap: balance; margin: 0; }
-button, input, select { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.wrap {
-  max-width: 1160px; margin: 0 auto;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-
-/* 머리 */
-.top { border-bottom: 1px solid var(--line); }
-.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 18px; }
-.stamp {
-  width: 34px; height: 34px; border: 2px solid var(--seal); color: var(--seal); border-radius: 50%;
-  display: grid; place-items: center; font-size: 13px; font-weight: 800; transform: rotate(-8deg);
-}
-.pill { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--card); }
-
-.hero .wrap { padding-block: 40px 28px; display: grid; gap: 12px; }
-.eyebrow { font-size: 13px; letter-spacing: .06em; color: var(--accent); font-weight: 600; }
-.hero h1 { font-size: clamp(26px, 4.4vw, 40px); font-weight: 800; max-width: 22em; }
-.hero p { margin: 0; color: var(--muted); max-width: 46em; }
-
-/* 용어 버튼과 펼침 카드 */
-.t {
-  background: none; border: 0; padding: 0 1px; cursor: pointer; color: inherit; font-weight: 600;
-  text-decoration: underline dotted var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px;
-}
-.t::after { content: "?"; font-size: 10px; font-weight: 700; color: var(--accent); vertical-align: super; margin-left: 1px; }
-.t[aria-expanded="true"] { background: var(--accent-soft); border-radius: 4px; }
-.term-card {
-  margin: 10px 0 4px; padding: 14px 16px; background: var(--accent-soft); border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); display: grid; gap: 8px; font-size: 14px;
-}
-.term-card header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.term-card strong { font-size: 15px; }
-.term-card .aka { color: var(--muted); font-weight: 400; font-size: 13px; }
-.term-card p { margin: 0; }
-.term-card .mine { background: var(--card); border-radius: 8px; padding: 10px 12px; }
-.term-card .mine b { color: var(--accent); display: block; font-size: 12px; letter-spacing: .04em; margin-bottom: 2px; }
-.term-card .close { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 13px; padding: 2px 4px; }
-
-sup.src { font-size: 11px; margin-left: 2px; }
-sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; border-radius: 3px; background: var(--accent-soft); }
-
-/* 본문 2단 */
-.layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 28px; align-items: start; padding-block: 8px 40px; }
-@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
-
-.panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-.form-panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 14px; }
-@media (max-width: 900px) { .form-panel { position: static; } }
-.form-panel h2 { font-size: 18px; }
-.field { display: grid; gap: 4px; }
-.field label { font-size: 13px; color: var(--muted); font-weight: 500; }
-.field input, .field select {
-  width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
-}
-.field .hint { font-size: 12px; color: var(--muted); }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg label { text-align: center; padding: 8px; cursor: pointer; font-size: 14px; color: var(--ink); }
-.seg input:checked + label { background: var(--accent); color: var(--card); font-weight: 600; }
-.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-.save { border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 8px; }
-.btn {
-  border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 600;
-  background: var(--accent); color: var(--card);
-}
-.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-.btn:disabled { opacity: .55; cursor: wait; }
-.share { display: flex; gap: 6px; }
-.share input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); font-family: var(--mono); font-size: 12px; }
-.status { font-size: 12px; color: var(--muted); min-height: 1.2em; }
-.status.err { color: var(--seal); }
-
-/* 요약 판정 */
-.verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 22px; }
-.verdict { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
-.verdict .k { font-size: 12px; color: var(--muted); }
-.verdict .v { font-size: 17px; font-weight: 700; }
-.verdict .d { font-size: 13px; color: var(--muted); }
-.chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
-.chip.ok { background: var(--ok-soft); color: var(--ok); }
-.chip.warn { background: var(--warn-soft); color: var(--warn); }
-.chip.risk { background: var(--seal-soft); color: var(--seal); }
-.chip.info { background: var(--accent-soft); color: var(--accent); }
-
-/* 타임라인 */
-.section-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.section-h h2 { font-size: 22px; }
-.section-h small { color: var(--muted); font-size: 13px; }
-.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
-.tl-item { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
-.tl-item:first-child { border-top: 0; }
-.tl-date { display: grid; gap: 2px; align-content: start; }
-.tl-date .d1 { font-family: var(--mono); font-size: 14px; white-space: nowrap; }
-.tl-date .dday { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.tl-item.past .tl-date .d1 { color: var(--muted); text-decoration: line-through; }
-.tl-item.key { position: relative; }
-.tl-item.key .tl-date .d1 { color: var(--seal); font-weight: 600; }
-.tl-body { min-width: 0; }
-.tl-body h3 { font-family: var(--body); font-size: 15px; font-weight: 700; margin-bottom: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.tl-body p { margin: 0; color: var(--muted); font-size: 14px; }
-.tl-step { font-size: 11px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 5px; }
-@media (max-width: 520px) { .tl-item { grid-template-columns: minmax(0, 1fr); gap: 4px; } .tl-date { display: flex; gap: 10px; } }
-
-/* STEP 섹션 */
-.steps { display: grid; gap: 22px; padding-bottom: 32px; }
-.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 16px; }
-.step-h { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
-.step-no { grid-row: span 2; font-family: var(--display); font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1; }
-.step-h h2 { font-size: 21px; }
-.step-h .when { font-size: 13px; color: var(--muted); }
-.progress { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-
-.checks { list-style: none; margin: 0; padding: 0; display: grid; }
-.checks > li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
-.checks > li:first-child { border-top: 0; }
-.checks input[type="checkbox"] { width: 18px; height: 18px; margin-top: 4px; accent-color: var(--accent); }
-.checks .ttl { font-weight: 600; }
-.checks .desc { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
-.checks li.done .ttl { color: var(--muted); text-decoration: line-through; }
-.checks .extra { grid-column: 2; min-width: 0; }
-
-/* AI 예시 카드 */
-.ai {
-  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper);
-}
-.ai-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.ai-h b { font-size: 14px; }
-.ai-tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--card); background: var(--ink); border-radius: 4px; padding: 1px 6px; }
-.ai-body { padding: 14px; display: grid; gap: 12px; }
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.tabs button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
-.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
-.reg { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--card); }
-.reg th, .reg td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
-.reg th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
-.reg .part { font-family: var(--display); font-weight: 800; }
-.scroll { overflow-x: auto; }
-.flags { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.flags li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
-.flags li > .term-card { grid-column: 1 / -1; margin-top: 0; }
-.seg { position: relative; }
-.meter { display: grid; gap: 6px; }
-.bar { position: relative; height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.bar span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; }
-.bar .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
-.meter .lab { display: flex; justify-content: space-between; font-size: 13px; gap: 8px; flex-wrap: wrap; }
-.upload { border: 1.5px dashed var(--line); border-radius: 10px; padding: 12px; text-align: center; color: var(--muted); font-size: 13px; }
-
-.clauses { display: grid; gap: 10px; }
-.clause { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; font-size: 14px; }
-.clause q { font-family: var(--display); font-weight: 600; quotes: "“" "”"; }
-.clause .fix { color: var(--muted); }
-.clause .fix b { color: var(--ink); }
-
-.mini { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-.calc-out { font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
-.sub { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; font-size: 14px; }
-.sub label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
-.sub input { margin-top: 5px; accent-color: var(--accent); }
-.loans { display: grid; gap: 6px; font-size: 14px; margin-top: 6px; }
-.loans div { background: var(--paper); border-radius: 8px; padding: 8px 10px; }
-
-/* 용어집, 출처 */
-.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-.glossary details { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
-.glossary summary { cursor: pointer; font-weight: 600; }
-.glossary summary .aka { color: var(--muted); font-weight: 400; font-size: 13px; }
-.glossary details p { margin: 8px 0 0; font-size: 14px; }
-.glossary .mine { margin-top: 8px; padding: 8px 10px; background: var(--accent-soft); border-radius: 8px; font-size: 14px; }
-.sources { font-size: 13px; color: var(--muted); padding-left: 1.6em; margin: 0; display: grid; gap: 4px; }
-.sources li:target { background: var(--accent-soft); border-radius: 4px; }
-.sources li { scroll-margin-top: 80px; }
-.foot { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
-.foot .wrap { padding-block: 24px 40px; display: grid; gap: 6px; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .term-card { animation: open .18s ease-out; }
-  @keyframes open { from { transform: translateY(-4px); opacity: .4; } }
-}
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="top">
   <div class="wrap">
-    <div class="brand"><span class="stamp" aria-hidden="true">집</span>처음이라, 내 집</div>
+    <div class="brand"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>처음이라, 내 집</div>
     <span class="pill">공모전 PoC 목업 · 법률 자문이 아니에요</span>
   </div>
 </header>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow">사회초년생을 위한 AI 주거 계약 가이드</div>
-    <h1>계약일과 입주일만 넣으면, 내가 해야 할 일을 날짜순으로 정리해요</h1>
+    <span class="eyebrow">AI Housing Contract Guide</span>
+    <h1>계약일과 입주일만 넣으면<br><span class="mark">해야 할 일</span>을 <span class="mark">날짜순</span>으로 정리해요</h1>
+    <hr class="rule">
+    <p><b>사회초년생을 위한 AI 주거 계약 가이드</b></p>
     <p>밑줄 친 <button type="button" class="t" data-t="daehang">대항력</button> 같은 용어를 누르면 뜻과 함께 <b>내 계약에서는 무슨 뜻인지</b>가 펼쳐져요. 모든 안내에는 공공기관 출처 번호가 붙어 있어요.</p>
   </div>
 </section>
@@ -259,9 +30,9 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
 <div class="wrap layout">
   <!-- 내 계약 정보 -->
   <aside class="panel form-panel" aria-labelledby="form-h">
-    <h2 id="form-h">내 계약 정보</h2>
+    <div><span class="eyebrow">My Contract</span><h2 id="form-h">내 계약 정보</h2></div>
     <div class="field">
-      <span id="type-l" style="font-size:13px;color:var(--muted);font-weight:500">계약 유형</span>
+      <span id="type-l" class="field-l">계약 유형</span>
       <div class="seg" role="radiogroup" aria-labelledby="type-l">
         <input type="radio" name="type" id="type-jeonse" value="jeonse"><label for="type-jeonse">전세</label>
         <input type="radio" name="type" id="type-wolse" value="wolse" checked><label for="type-wolse">월세</label>
@@ -304,7 +75,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
     <div class="verdicts" id="verdicts"></div>
     <section class="panel" aria-labelledby="tl-h">
       <div class="section-h">
-        <h2 id="tl-h">내 계약 타임라인</h2>
+        <div><span class="eyebrow">Timeline</span><h2 id="tl-h">내 계약 타임라인</h2></div>
         <small id="todayLabel"></small>
       </div>
       <ol class="timeline" id="timeline"></ol>
@@ -317,7 +88,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- STEP 1 -->
   <section class="step" id="step1" aria-labelledby="s1-h">
     <div class="step-h">
-      <span class="step-no">1</span>
+      <span class="step-no">STEP 01 · PREPARE</span>
       <h2 id="s1-h">집 알아보기 및 계약 준비</h2>
       <span class="when">계약 전 · <span class="progress" data-progress="s1"></span></span>
     </div>
@@ -391,7 +162,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- STEP 2 -->
   <section class="step" id="step2" aria-labelledby="s2-h">
     <div class="step-h">
-      <span class="step-no">2</span>
+      <span class="step-no">STEP 02 · CONTRACT</span>
       <h2 id="s2-h">계약서 작성 및 검토</h2>
       <span class="when">계약 당일 전후 · <span class="progress" data-progress="s2"></span></span>
     </div>
@@ -443,7 +214,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- STEP 3 -->
   <section class="step" id="step3" aria-labelledby="s3-h">
     <div class="step-h">
-      <span class="step-no">3</span>
+      <span class="step-no">STEP 03 · MOVE-IN</span>
       <h2 id="s3-h">잔금 지급 및 입주</h2>
       <span class="when">잔금일·입주일 · <span class="progress" data-progress="s3"></span></span>
     </div>
@@ -483,7 +254,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- STEP 4 -->
   <section class="step" id="step4" aria-labelledby="s4-h">
     <div class="step-h">
-      <span class="step-no">4</span>
+      <span class="step-no">STEP 04 · AFTERCARE</span>
       <h2 id="s4-h">입주 후 관리</h2>
       <span class="when">입주 후 · <span class="progress" data-progress="s4"></span></span>
     </div>
@@ -516,7 +287,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- 용어집 -->
   <section class="panel" aria-labelledby="g-h">
     <div class="section-h">
-      <h2 id="g-h">용어집</h2>
+      <div><span class="eyebrow">Glossary</span><h2 id="g-h">용어집</h2></div>
       <small id="termSource">불러오는 중…</small>
     </div>
     <div class="glossary" id="glossary"></div>
@@ -525,7 +296,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
   <!-- 출처 -->
   <section class="panel" aria-labelledby="src-h">
     <div class="section-h">
-      <h2 id="src-h">출처</h2>
+      <div><span class="eyebrow">Sources</span><h2 id="src-h">출처</h2></div>
       <small>2026년 11월에 확인한 공공기관·법령 자료</small>
     </div>
     <ol class="sources" id="sources"></ol>
@@ -534,6 +305,7 @@ sup.src a { text-decoration: none; font-family: var(--mono); padding: 0 2px; bor
 
 <footer class="foot">
   <div class="wrap">
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
     <div>이 페이지는 엘리스 AI 챌린지 제출용 PoC 목업이에요. 등기부·계약서 분석 화면은 가상 데이터로 만든 예시예요.</div>
     <div>법률 자문이 아니며, 제도와 기준은 바뀔 수 있어요. 실제 계약 전에는 출처의 공식 안내와 공인중개사·법률 전문가에게 확인하세요.</div>
   </div>
@@ -789,7 +561,7 @@ function renderMeter() {
   if (!price) { $('#regMeter').innerHTML = '<span class="status">시세를 넣으면 비율을 계산해요.</span>'; return; }
   const dep = state.deposit;
   const jeonse = dep / price, total = (dep + r.max) / price;
-  const bar = (v, color) => `<div class="bar"><span style="width:${Math.min(v, 1) * 100}%;background:var(${color})"></span><i class="mark" style="left:70%"></i></div>`;
+  const bar = (v, color) => `<div class="bar"><span style="width:${Math.min(v, 1) * 100}%;background:var(${color})"></span><i class="tick" style="left:70%"></i></div>`;
   const lv = (v) => v > 0.7 ? (v > 1 ? 'risk' : 'warn') : 'ok';
   $('#regMeter').innerHTML = `
     <div class="lab"><span>${T('jeonsega', '전세가율')} = 내 보증금 ${won(dep)} ÷ 시세</span><b class="num">${Math.round(jeonse * 100)}%</b></div>
