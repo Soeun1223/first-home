@@ -33,7 +33,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n처음이라, 내 집 · http://localhost:${PORT}`);
+  console.log(`\n집키미 · http://localhost:${PORT}`);
   console.log(`- Supabase 설정: ${process.env.SUPABASE_URL ? '있음(값은 표시하지 않음)' : '없음 → 용어집은 terms.json, 저장은 500'}`);
   console.log('- 끝낼 때는 Ctrl+C\n');
 });

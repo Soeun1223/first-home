@@ -1,4 +1,4 @@
--- 처음이라, 내 집 · Supabase SQL Editor에서 이 파일 → seed-terms.sql 순서로 한 번씩 실행합니다.
+-- 집키미 · Supabase SQL Editor에서 이 파일 → seed-terms.sql 순서로 한 번씩 실행합니다.
 --
 -- 표 두 개
 --   terms  용어집(뜻·출처 번호). 누구나 읽기만 합니다. 내용 고치기는 seed-terms.sql을 다시 실행합니다.
@@ -17,7 +17,7 @@ create table if not exists public.terms (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.terms is '처음이라, 내 집 · 용어집 (공개 읽기 전용)';
+comment on table public.terms is '집키미 · 용어집 (공개 읽기 전용)';
 
 alter table public.terms enable row level security;
 
@@ -38,7 +38,7 @@ create table if not exists public.plans (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.plans is '처음이라, 내 계약 저장 (서버 함수 전용, 공개 역할 접근 없음)';
+comment on table public.plans is '집키미 · 내 계약 저장 (서버 함수 전용, 공개 역할 접근 없음)';
 
 alter table public.plans enable row level security;
 -- 정책 없음: anon/authenticated는 아무 행도 읽거나 쓸 수 없습니다
