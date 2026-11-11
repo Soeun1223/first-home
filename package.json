@@ -1,7 +1,7 @@
 {
   "name": "first-home",
   "private": true,
-  "description": "집키미 · 사회초년생을 위한 AI 주거 계약 가이드 (엘리스 AI 챌린지 PoC)",
+  "description": "집키미 · 매물 비교와 주거 계약 준비를 한 번에 (엘리스 AI 챌린지 PoC)",
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
