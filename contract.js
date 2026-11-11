@@ -370,25 +370,20 @@ document.addEventListener('click', (e) => {
   if (btn) { e.preventDefault(); toggleTerm(btn); }
 });
 
-/* ───────── 용어집 불러오기: Supabase → 실패하면 terms.json ───────── */
+/* ───────── 용어집 불러오기: terms.json (자주 바뀌지 않는 공개 데이터라 파일 하나로 충분) ───────── */
 async function loadTerms() {
-  let items, from;
+  let items;
   try {
-    const res = await fetch('/api/terms', { headers: { Accept: 'application/json' } });
+    const res = await fetch('terms.json?v=20261111');
     if (!res.ok) throw new Error(String(res.status));
-    items = (await res.json()).items;
-    from = `Supabase에서 불러온 용어 ${items.length}개`;
+    items = await res.json();
+    if (!Array.isArray(items)) throw new Error('형식 오류');
   } catch {
-    try {
-      items = await (await fetch('terms.json')).json();
-      from = `기본 데이터의 용어 ${items.length}개 (Supabase 연결 전)`;
-    } catch {
-      $('#termSource').textContent = '용어집을 불러오지 못했어요. 새로고침해 주세요.';
-      return;
-    }
+    $('#termSource').textContent = '용어집을 불러오지 못했어요. 새로고침해 주세요.';
+    return;
   }
   TERMS = Object.fromEntries(items.map((t) => [t.key, t]));
-  $('#termSource').textContent = from;
+  $('#termSource').textContent = `용어 ${items.length}개`;
   renderGlossary();
   refreshOpenCards();
 }
@@ -413,6 +408,12 @@ function showShare() {
   $('#shareRow').hidden = false;
   $('#saveBtn').textContent = '지금 저장하기';
   history.replaceState(null, '', `?plan=${planCode}#/contract`);
+  // 캘린더 구독 주소: 캘린더 앱은 webcal:// 로 열면 구독 화면을 띄웁니다
+  const feed = `${location.host}/api/calendar?code=${planCode}`;
+  $('#calApple').href = `webcal://${feed}`;
+  $('#calGoogle').href = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(`webcal://${feed}`)}`;
+  $('#calCopy').dataset.url = `${location.protocol}//${feed}`;
+  $('#calBox').hidden = false;
 }
 async function save() {
   const btn = $('#saveBtn');
@@ -597,6 +598,11 @@ $$('#regDemo .tabs button').forEach((b) => b.addEventListener('click', () => {
   renderRegistry(true);
 }));
 $('#saveBtn').addEventListener('click', save);
+$('#calCopy').addEventListener('click', async (e) => {
+  const url = e.currentTarget.dataset.url;
+  try { await navigator.clipboard.writeText(url); setStatus('캘린더 주소를 복사했어요. 캘린더 앱의 ‘URL로 구독’에 붙여 넣으세요.'); }
+  catch { $('#shareUrl').value = url; $('#shareUrl').select(); setStatus('캘린더 주소를 위 칸에 넣었어요. 복사해서 쓰세요.'); }
+});
 $('#copyBtn').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('#shareUrl').value); setStatus('링크를 복사했어요.'); }
   catch { $('#shareUrl').select(); setStatus('링크를 선택했어요. 복사해서 쓰세요.'); }

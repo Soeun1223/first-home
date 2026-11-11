@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "test": "node --test",
-    "seed": "node scripts/seed-terms.mjs"
+    "test": "node --test"
   },
   "engines": {
     "node": "24.x"

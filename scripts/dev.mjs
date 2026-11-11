@@ -1,5 +1,5 @@
 // 로컬 시험 서버 · 정적 파일(index.html 등)과 api/ 함수를 한 주소에서 함께 엽니다.
-//   npm run dev            .env.local의 SUPABASE_* 값을 읽습니다(없으면 함수가 500, 화면은 terms.json으로 대신 씁니다)
+//   npm run dev            .env.local의 SUPABASE_* 값을 읽습니다(없으면 링크 저장 함수가 500을 돌려줍니다)
 //   PORT=4000 npm run dev  다른 포트로 열기 (기본 3000)
 // Vercel과 완전히 같지는 않습니다(CDN 캐시·리전·배포 보호 없음).
 import { createServer } from 'node:http';
@@ -34,7 +34,7 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`\n집키미 · http://localhost:${PORT}`);
-  console.log(`- Supabase 설정: ${process.env.SUPABASE_URL ? '있음(값은 표시하지 않음)' : '없음 → 용어집은 terms.json, 저장은 500'}`);
+  console.log(`- Supabase 설정: ${process.env.SUPABASE_URL ? '있음(값은 표시하지 않음)' : '없음 → 링크 저장은 500'}`);
   console.log('- 끝낼 때는 Ctrl+C\n');
 });
 

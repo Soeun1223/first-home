@@ -219,12 +219,22 @@
             <span class="hint">임대차 신고 대상인지, 보증 한도가 얼마인지 판단할 때 써요.</span>
           </div>
           <div class="save">
-            <button type="button" class="btn" id="saveBtn">이 계약 저장하고 링크 받기</button>
+            <button type="button" class="btn" id="saveBtn">이 계약 저장하고 링크·캘린더 받기</button>
             <div class="share" id="shareRow" hidden>
               <input id="shareUrl" readonly aria-label="저장된 계약 링크">
               <button type="button" class="btn ghost" id="copyBtn">복사</button>
             </div>
             <div class="status" id="saveStatus" role="status">예시 값이 들어 있어요. 내 날짜로 바꿔 보세요.</div>
+            <div class="cal" id="calBox" hidden>
+              <b class="cal-h">내 캘린더에 일정 구독</b>
+              <p class="cal-d">계약일, 신고 마감, 입주·전입신고, 반환보증 마감, 갱신 기간이 쓰고 있는 캘린더에 들어가요. 날짜를 고치면 캘린더도 따라 바뀌어요(앱에 따라 몇 시간 걸려요).</p>
+              <div class="cal-btns">
+                <a class="btn" id="calApple" href="#">아이폰·맥 캘린더</a>
+                <a class="btn ghost" id="calGoogle" href="#" target="_blank" rel="noopener">구글 캘린더</a>
+                <button type="button" class="btn ghost" id="calCopy">주소 복사</button>
+              </div>
+              <p class="cal-d">알림: 아이폰은 구독 화면에서 ‘알림 제거’를 끄면 3일 전·전날 오전 9시에 울려요. 구글 캘린더는 구독한 캘린더 설정에서 알림을 켜 주세요. 캘린더 주소를 아는 사람은 이 일정을 볼 수 있으니 다른 사람에게 보내지 마세요.</p>
+            </div>
           </div>
         </aside>
 
