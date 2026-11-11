@@ -116,17 +116,30 @@
         </div>
         <div class="extra">
           <div class="ai" id="regDemo">
-            <div class="ai-h"><b>AI 등기부 분석</b><span class="ai-tag">예시 · 가상 데이터</span></div>
+            <div class="ai-h"><b>AI 등기부 분석</b><span class="ai-tag">목업 · 예시 결과</span></div>
             <div class="ai-body">
-              <div class="upload">등기부 PDF·사진을 올리면 AI가 읽어요. 목업에서는 아래 가상 등기부로 대신 보여 줘요.</div>
-              <div class="tabs" role="group" aria-label="예시 등기부 고르기">
-                <button type="button" data-sample="safe" aria-pressed="true">비교적 안전한 집</button>
-                <button type="button" data-sample="risky" aria-pressed="false">위험 신호가 많은 집</button>
+              <div class="ai-upload" data-ai="reg">
+                <input type="file" id="regFile" class="sr" accept="image/*,application/pdf">
+                <label for="regFile" class="drop">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                  <b>등기부등본 PDF·사진 올리기</b>
+                  <span>눌러서 고르거나 여기로 끌어다 놓으세요</span>
+                </label>
+                <button type="button" class="btn ghost" data-run-sample>샘플 등기부로 해 보기</button>
+                <p class="note">목업이라 올린 파일은 서버로 보내지 않아요. 분석 결과는 가상 등기부 예시로 보여 줘요.</p>
+              </div>
+              <div class="ai-progress" hidden></div>
+              <div class="ai-result" hidden>
+              <div class="result-h"><span class="file-chip" data-file></span><button type="button" class="link" data-reset>다른 파일 올리기</button></div>
+              <div class="tabs" role="group" aria-label="예시 결과 바꿔 보기">
+                <button type="button" data-sample="safe" aria-pressed="false">예시: 비교적 안전한 집</button>
+                <button type="button" data-sample="risky" aria-pressed="true">예시: 위험 신호가 많은 집</button>
               </div>
               <div class="scroll"><table class="reg" id="regTable"></table></div>
               <ul class="flags" id="regFlags"></ul>
               <div class="field" style="max-width:260px"><label for="price">이 집 시세 (만 원)</label><input type="number" id="price" min="0" step="500"></div>
               <div class="meter" id="regMeter"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -197,8 +210,25 @@
         </div>
         <div class="extra">
           <div class="ai">
-            <div class="ai-h"><b>AI 특약 해설</b><span class="ai-tag">예시 · 가상 계약서</span></div>
-            <div class="ai-body"><div class="clauses" id="clauses"></div></div>
+            <div class="ai-h"><b>AI 특약 해설</b><span class="ai-tag">목업 · 예시 결과</span></div>
+            <div class="ai-body">
+              <div class="ai-upload" data-ai="contract">
+                <input type="file" id="contractFile" class="sr" accept="image/*,application/pdf">
+                <label for="contractFile" class="drop">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                  <b>임대차계약서 PDF·사진 올리기</b>
+                  <span>특약사항이 보이게 찍어 주세요</span>
+                </label>
+                <button type="button" class="btn ghost" data-run-sample>샘플 계약서로 해 보기</button>
+                <p class="note">목업이라 올린 파일은 서버로 보내지 않아요. 분석 결과는 가상 계약서 예시로 보여 줘요.</p>
+              </div>
+              <div class="ai-progress" hidden></div>
+              <div class="ai-result" hidden>
+                <div class="result-h"><span class="file-chip" data-file></span><button type="button" class="link" data-reset>다른 파일 올리기</button></div>
+                <p class="found" id="clauseSummary"></p>
+                <div class="clauses" id="clauses"></div>
+              </div>
+            </div>
           </div>
         </div>
       </li>
@@ -422,7 +452,7 @@ const MINE = {
   wiban: () => '위반건축물이면 대출이나 보증 심사에서 거절될 수 있어요. 계약 전에 꼭 확인하세요.',
   jeonsega: (s) => s.deposit ? `내 보증금 ${won(s.deposit)}이 시세의 70%를 넘지 않으려면 시세가 ${won(Math.ceil(s.deposit / 0.7 / 1e6) * 1e6)} 이상이어야 해요.` : '보증금을 넣으면 계산해 줘요.',
   imdaein: (s, d) => `계약일 ${D(d.c)}에 집주인에게 확정일자 부여 현황과 국세·지방세 납세증명서를 요청하세요. 법에 있는 의무라 요청해도 실례가 아니에요.`,
-  teukyak: () => 'STEP 2의 AI 특약 해설 예시에서 흔한 특약 네 가지를 쉬운 말로 풀었어요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
+  teukyak: () => 'STEP 2에서 계약서를 올리면 AI가 특약사항을 찾아 위험·주의·권장으로 나눠 쉬운 말로 풀어 줘요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
   hwakjeong: (s, d) => d.singoTarget
     ? `내 계약은 임대차 신고 대상이에요. ${D(d.singoDue)}까지 계약서를 첨부해 신고하면 확정일자가 자동으로 붙어요.`
     : `내 계약은 임대차 신고 대상이 아니라서 확정일자를 따로 받아야 해요. ${D(d.m)} 전입신고할 때 주민센터에서 함께 받으면 돼요.`,
@@ -546,7 +576,7 @@ const REG = {
     ],
   },
 };
-let regKey = 'safe';
+let regKey = 'risky';
 function renderRegistry(resetPrice) {
   const r = REG[regKey];
   if (resetPrice) $('#price').value = r.price;
@@ -801,6 +831,82 @@ $('#price').addEventListener('input', renderMeter);
 document.addEventListener('change', (e) => {
   if (e.target.matches('.checks input[type="checkbox"], [data-sub]')) { renderProgress(); renderProtect(); autosave(); }
 });
+/* ───────── AI 업로드 흐름 (목업): 파일 선택 → 분석 단계 표시 → 예시 결과 ─────────
+   실제 서비스에서는 이 자리에서 파일을 Vercel 함수로 보내 AI(OCR + LLM)가 읽습니다.
+   목업은 파일을 브라우저 밖으로 보내지 않고, 이름·미리보기만 보여 준 뒤 예시 결과를 펼칩니다. */
+const AI_STEPS = {
+  reg: ['문서 글자 읽기 (OCR)', '표제부·갑구·을구 기록 나누기', '근저당·신탁·가압류 위험 신호 찾기'],
+  contract: ['계약서 글자 읽기 (OCR)', '특약사항 조항 찾기', '내 계약 기준으로 위험도 판단하기'],
+};
+const MAX_FILE = 10 * 1024 * 1024;
+const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms) => new Promise((r) => setTimeout(r, slow ? ms : 0));
+
+function aiParts(kind) {
+  const box = $(`.ai-upload[data-ai="${kind}"]`);
+  const body = box.parentElement;
+  return { box, body, progress: $('.ai-progress', body), result: $('.ai-result', body), chip: $('[data-file]', body) };
+}
+let previewUrl = {};
+async function runAI(kind, file) {
+  const p = aiParts(kind);
+  const err = $('.err', p.box);
+  if (err) err.remove();
+  if (file && !(/^image\//.test(file.type) || file.type === 'application/pdf')) {
+    p.box.insertAdjacentHTML('beforeend', '<p class="note err" role="alert">사진(JPG·PNG 등)이나 PDF 파일만 올릴 수 있어요.</p>');
+    return;
+  }
+  if (file && file.size > MAX_FILE) {
+    p.box.insertAdjacentHTML('beforeend', '<p class="note err" role="alert">파일이 10MB를 넘어요. 더 작은 사진이나 PDF로 올려 주세요.</p>');
+    return;
+  }
+  if (previewUrl[kind]) URL.revokeObjectURL(previewUrl[kind]);
+  previewUrl[kind] = file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+  const name = file ? file.name : (kind === 'reg' ? '샘플_등기사항전부증명서.pdf' : '샘플_주택임대차계약서.pdf');
+  const thumb = previewUrl[kind] ? `<img src="${previewUrl[kind]}" alt="">` : '<span class="pdf">PDF</span>';
+  p.chip.innerHTML = `${thumb}<span>${esc(name)}</span>`;
+
+  p.box.hidden = true;
+  p.result.hidden = true;
+  p.progress.hidden = false;
+  const steps = AI_STEPS[kind];
+  p.progress.innerHTML = `<div class="file-chip">${thumb}<span>${esc(name)}</span></div>
+    <ol class="ai-steps">${steps.map((s) => `<li>${s}</li>`).join('')}</ol>
+    <p class="note" role="status">AI가 문서를 읽고 있어요…</p>`;
+  const items = $$('.ai-steps li', p.progress);
+  for (const li of items) { li.classList.add('doing'); await wait(650); li.classList.replace('doing', 'done'); }
+  await wait(250);
+
+  p.progress.hidden = true;
+  p.result.hidden = false;
+  if (kind === 'reg') renderRegistry(true);
+  else {
+    const n = { risk: 0, warn: 0, ok: 0 };
+    CLAUSES.forEach(([lv]) => { n[lv] += 1; });
+    $('#clauseSummary').innerHTML = `특약 ${CLAUSES.length}개를 찾았어요 · <span class="chip risk">위험 ${n.risk}</span> <span class="chip warn">주의 ${n.warn}</span> <span class="chip ok">권장 ${n.ok}</span>`;
+  }
+  p.result.querySelector('.result-h').scrollIntoView({ block: 'nearest', behavior: slow ? 'smooth' : 'auto' });
+}
+function resetAI(kind) {
+  const p = aiParts(kind);
+  if (previewUrl[kind]) { URL.revokeObjectURL(previewUrl[kind]); previewUrl[kind] = null; }
+  $('input[type="file"]', p.box).value = '';
+  p.result.hidden = true;
+  p.progress.hidden = true;
+  p.box.hidden = false;
+}
+$$('.ai-upload').forEach((box) => {
+  const kind = box.dataset.ai;
+  const input = $('input[type="file"]', box);
+  const drop = $('.drop', box);
+  input.addEventListener('change', () => { if (input.files[0]) runAI(kind, input.files[0]); });
+  $('[data-run-sample]', box).addEventListener('click', () => runAI(kind, null));
+  ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) runAI(kind, f); });
+  $('[data-reset]', box.parentElement).addEventListener('click', () => resetAI(kind));
+});
+
 $$('#regDemo .tabs button').forEach((b) => b.addEventListener('click', () => {
   regKey = b.dataset.sample;
   $$('#regDemo .tabs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
