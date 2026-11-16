@@ -564,7 +564,11 @@ h3 { font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; }
 /* ===== 집키미: 머리글과 단계 탭 ===== */
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .site-header h1 a { display: inline-flex; align-items: center; gap: 10px; }
-.site-header .logo { width: 30px; height: 30px; fill: var(--ink); flex: none; }
+/* 로고: 검정 집. 어두운 화면에서는 밝은 타일 위에 올려 보이게 한다 */
+.site-header .logo { width: 30px; height: 30px; fill: #1c1d21; flex: none; }
+@media (prefers-color-scheme: dark) {
+  .site-header .logo { width: 36px; height: 36px; padding: 4px; border-radius: 10px; background: #ececef; }
+}
 .main-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); }
 .main-tabs a {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 18px; border-radius: 999px;
