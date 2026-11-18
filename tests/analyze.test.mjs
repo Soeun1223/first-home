@@ -242,3 +242,11 @@ test('지시문에 역할·형식·근거·금지가 모두 있다', () => {
     for (const word of ['역할', '형식', '근거', '금지']) assert.ok(system.includes(word), `${kind}: ${word}`);
   }
 });
+
+test('OCR 실수에도 버틴다: 채권최고액을 잘못 읽어도 금액을 세고, 별표 6개 주민번호도 가린다', () => {
+  assert.equal(sumMaxClaims('1 근저당권설정 채권채권액 금60,000,000원 채무자 ○○○'), 60_000_000);
+  assert.equal(sumMaxClaims('채권 최고액 금 60,000,000원'), 60_000_000);
+  assert.equal(sumMaxClaims('청구금액 금30,000,000원'), 0, '가압류 청구금액은 세지 않는다');
+  const { text } = maskPersonal('소유자 김우리 600104-****** 근저당권자 이거레 750614-*******');
+  assert.ok(!text.includes('600104') && !text.includes('750614'));
+});

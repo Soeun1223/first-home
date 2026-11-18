@@ -462,7 +462,7 @@ const LIVE_CACHE = new Map();
 const LIVE_PHOTO = {}; // kind → {data: data URL, name}
 // '예시 넣기' 사진: 공개된 등기부 예시 이미지, 개인정보를 가린 실제 계약서 특약 사진
 const LIVE_EXAMPLES = {
-  registry: { src: 'images/example-registry.jpg', name: '예시 등기부등본.jpg' },
+  registry: { src: 'images/example-registry.jpg?v=2', name: '예시 등기부등본.jpg' },
   clauses: { src: 'images/example-clauses.jpg', name: '예시 계약서 특약사항.jpg' },
 };
 const MAX_PHOTO_CHARS = 3_900_000; // 서버 한도(4,000,000자)보다 조금 작게
