@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261118b">
+  <link rel="stylesheet" href="style.css?v=20261118e">
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -282,39 +282,22 @@
                 <p class="desc">인터넷등기소에서 떼서 <button type="button" class="t" data-t="gapgu">갑구</button>의 소유자와 <button type="button" class="t" data-t="eulgu">을구</button>의 <button type="button" class="t" data-t="geunjeodang">근저당권</button>을 확인해요. 근저당 금액이 시가보다 적다고 안심하면 안 돼요.<sup class="src" data-s="1,17"></sup></p>
               </div>
               <div class="extra">
-                <div class="ai" id="regDemo">
+                <div class="ai">
                   <div class="ai-h"><b>AI 등기부 분석</b><span class="ai-tag">오픈하사 AI</span></div>
                   <div class="ai-body">
                     <form class="ai-live" data-live="registry" novalidate>
-                      <label for="regText" class="live-h">등기부 갑구·을구 글을 붙여 넣고 AI 분석 받기</label>
-                      <p class="live-notice">붙여 넣은 글은 <b>AI(오픈하사)에 보내져요.</b> 보내기 전에 이름·주민번호·전화번호·동호수는 자동으로 가리고, 서버에 저장하지 않아요.</p>
-                      <textarea id="regText" rows="7" maxlength="3000" placeholder="예) 2 근저당권설정 2021년5월20일 채권최고액 금96,000,000원 근저당권자 ○○은행&#10;3 가압류 2026년7월2일 청구금액 금30,000,000원"></textarea>
-                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 3,000자</span><span class="live-btns"><button type="button" class="btn ghost" data-example>예시 넣기</button><button type="submit" class="btn">AI 분석 받기</button></span></div>
+                      <label for="regText" class="live-h">등기부 사진을 올리거나 갑구·을구 글을 붙여 넣고 AI 분석 받기</label>
+                      <p class="live-notice"><b>사진은 그대로 AI(오픈하사)에 보내져</b> 글자를 읽어요. 소유자 이름·주민번호가 보이면 가리고 올려 주세요. 읽은 글과 붙여 넣은 글은 이름·주민번호·전화번호·계좌번호·동호수를 자동으로 가린 뒤 해설 AI에 보내고, 서버에 저장하지 않아요.</p>
+                      <div class="live-photo" data-photo hidden>
+                        <img alt="" data-photo-img>
+                        <div class="live-photo-bar"><span data-photo-name></span><button type="button" class="link" data-photo-clear>사진 빼기</button></div>
+                      </div>
+                      <textarea id="regText" rows="7" maxlength="3000" placeholder="사진을 보내면 AI가 읽은 글이 여기에 채워져요. 글을 직접 붙여 넣어도 돼요.&#10;예) 2 근저당권설정 2021년5월20일 채권최고액 금96,000,000원 근저당권자 ○○은행"></textarea>
+                      <input type="file" id="regPhoto" class="sr" accept="image/*,application/pdf" data-photo-input tabindex="-1" aria-hidden="true">
+                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 3,000자</span><span class="live-btns"><button type="button" class="btn ghost" data-photo-pick>사진 올리기</button><button type="button" class="btn ghost" data-example>예시 넣기</button><button type="submit" class="btn">AI 분석 받기</button></span></div>
                       <p class="live-status" data-status role="status"></p>
                       <div class="live-out" data-out hidden></div>
                     </form>
-                    <p class="ai-or"><span>또는 파일로 예시 결과 보기</span></p>
-                    <div class="ai-upload" data-ai="reg">
-                      <input type="file" id="regFile" class="sr" accept="image/*,application/pdf">
-                      <label for="regFile" class="drop">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                        <b>등기부등본 PDF·사진 올리기</b>
-                        <span>눌러서 고르거나 여기로 끌어다 놓으세요</span>
-                      </label>
-                      <p class="note">파일 올리기는 아직 목업이에요. 올린 파일은 서버로 보내지 않고, 가상 등기부 예시로 결과를 보여 줘요.</p>
-                    </div>
-                    <div class="ai-progress" hidden></div>
-                    <div class="ai-result" hidden>
-                    <div class="result-h"><span class="file-chip" data-file></span><button type="button" class="link" data-reset>다른 파일 올리기</button></div>
-                    <div class="tabs" role="group" aria-label="예시 결과 바꿔 보기">
-                      <button type="button" data-sample="safe" aria-pressed="false">예시: 비교적 안전한 집</button>
-                      <button type="button" data-sample="risky" aria-pressed="true">예시: 위험 신호가 많은 집</button>
-                    </div>
-                    <div class="scroll"><table class="reg" id="regTable"></table></div>
-                    <ul class="flags" id="regFlags"></ul>
-                    <div class="field" style="max-width:260px"><label for="price">이 집 시세 (만 원)</label><input type="number" id="price" min="0" step="500"></div>
-                    <div class="meter" id="regMeter"></div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -388,29 +371,18 @@
                   <div class="ai-h"><b>AI 특약 해설</b><span class="ai-tag">오픈하사 AI</span></div>
                   <div class="ai-body">
                     <form class="ai-live" data-live="clauses" novalidate>
-                      <label for="clauseText" class="live-h">특약사항 글을 붙여 넣고 AI 해설 받기</label>
-                      <p class="live-notice">붙여 넣은 글은 <b>AI(오픈하사)에 보내져요.</b> 이름·연락처·주소는 빼고 붙여 넣어 주세요. 전화번호·주민번호·계좌번호는 보내기 전에 자동으로 가리고, 서버에 저장하지 않아요.</p>
-                      <textarea id="clauseText" rows="6" maxlength="1500" placeholder="예) 1. 임대인은 보증금을 새로운 임차인이 입주한 후 반환한다.&#10;2. 임차인은 퇴실 시 모든 원상복구 비용을 부담한다."></textarea>
-                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 1,500자</span><span class="live-btns"><button type="button" class="btn ghost" data-example>예시 넣기</button><button type="submit" class="btn">AI 해설 받기</button></span></div>
+                      <label for="clauseText" class="live-h">계약서 특약사항 사진을 올리거나 글을 붙여 넣고 AI 해설 받기</label>
+                      <p class="live-notice"><b>사진은 그대로 AI(오픈하사)에 보내져</b> 글자를 읽어요. 이름·연락처·계좌번호가 보이면 가리고 올려 주세요. 읽은 글과 붙여 넣은 글은 이름·주민번호·전화번호·계좌번호·동호수를 자동으로 가린 뒤 해설 AI에 보내고, 서버에 저장하지 않아요.</p>
+                      <div class="live-photo" data-photo hidden>
+                        <img alt="" data-photo-img>
+                        <div class="live-photo-bar"><span data-photo-name></span><button type="button" class="link" data-photo-clear>사진 빼기</button></div>
+                      </div>
+                      <textarea id="clauseText" rows="6" maxlength="1500" placeholder="사진을 보내면 AI가 읽은 글이 여기에 채워져요. 글을 직접 붙여 넣어도 돼요.&#10;예) 1. 임대인은 보증금을 새로운 임차인이 입주한 후 반환한다."></textarea>
+                      <input type="file" id="clausePhoto" class="sr" accept="image/*,application/pdf" data-photo-input tabindex="-1" aria-hidden="true">
+                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 1,500자</span><span class="live-btns"><button type="button" class="btn ghost" data-photo-pick>사진 올리기</button><button type="button" class="btn ghost" data-example>예시 넣기</button><button type="submit" class="btn">AI 해설 받기</button></span></div>
                       <p class="live-status" data-status role="status"></p>
                       <div class="live-out" data-out hidden></div>
                     </form>
-                    <p class="ai-or"><span>또는 파일로 예시 결과 보기</span></p>
-                    <div class="ai-upload" data-ai="contract">
-                      <input type="file" id="contractFile" class="sr" accept="image/*,application/pdf">
-                      <label for="contractFile" class="drop">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                        <b>임대차계약서 PDF·사진 올리기</b>
-                        <span>특약사항이 보이게 찍어 주세요</span>
-                      </label>
-                      <p class="note">파일 올리기는 아직 목업이에요. 올린 파일은 서버로 보내지 않고, 가상 계약서 예시로 결과를 보여 줘요.</p>
-                    </div>
-                    <div class="ai-progress" hidden></div>
-                    <div class="ai-result" hidden>
-                      <div class="result-h"><span class="file-chip" data-file></span><button type="button" class="link" data-reset>다른 파일 올리기</button></div>
-                      <p class="found" id="clauseSummary"></p>
-                      <div class="clauses" id="clauses"></div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -530,7 +502,7 @@
   <!-- 저장 알림: 잠깐 떴다가 사라진다 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="contract.js?v=20261118c"></script>
+  <script type="module" src="contract.js?v=20261118d"></script>
   <script type="module" src="listings.js?v=20261111"></script>
 </body>
 </html>

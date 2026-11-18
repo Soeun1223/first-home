@@ -2,7 +2,7 @@
 // 정상, 400(잘못된 입력), 500(키 없음), 429(한도 초과), 504(시간 초과), 이상한 답, 개인정보 가리기
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handleAnalyze, maskPersonal, parseAnswer, findSignals, sumMaxClaims, buildMessages, HASA_URL, MODEL } from '../lib/analyze.js';
+import { handleAnalyze, maskPersonal, parseAnswer, findSignals, sumMaxClaims, buildMessages, HASA_URL, MODEL, OCR_MODELS } from '../lib/analyze.js';
 
 const ENV = { HASA_API_KEY: 'test-key-not-real' };
 const CLAUSES = '1. 임대인은 보증금을 새로운 임차인이 입주한 후 반환한다.\n2. 임차인은 퇴실 시 모든 원상복구 비용을 부담한다.';
@@ -160,6 +160,81 @@ test('등기부 도우미: 말소된 줄은 낱말·금액에서 뺀다', () => 
   assert.equal(sumMaxClaims(text), 96_000_000);
   assert.equal(sumMaxClaims('1 전세권설정 1990년12월12일 전세금 220,000,000원정'), 220_000_000, '선순위 전세금도 더한다');
 });
+
+/* ───────── 사진 → 글자 읽기(OCR) → 해설 ───────── */
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+const OCR_TEXT = '[특약사항]\n1. 임대인은 보증금을 새로운 임차인이 입주한 후 반환한다.\n2. 연락처 010-1234-5678';
+// 모델 이름으로 OCR 호출과 해설 호출을 나눠 답하는 가짜 오픈하사
+function fakeHasaByModel(answers, calls = []) {
+  const fn = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push(body);
+    const a = answers[body.model] ?? answers[MODEL];
+    if (typeof a === 'number') return new Response('{"error":{"message":"x"}}', { status: a });
+    return new Response(JSON.stringify({ choices: [{ message: { content: a } }], usage: { total_tokens: 100 } }), { status: 200 });
+  };
+  fn.calls = calls;
+  return fn;
+}
+
+test('사진: OCR 모델이 읽은 글을 개인정보를 가린 뒤 해설 모델에 보내고, 읽은 글도 돌려준다', async () => {
+  const hasa = fakeHasaByModel({ [OCR_MODELS[0]]: OCR_TEXT, [MODEL]: GOOD_CLAUSES });
+  const res = await handleAnalyze(post({ kind: 'clauses', image: PNG }), { fetchImpl: hasa, env: ENV });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.items.length, 2);
+  assert.ok(body.ocrText.includes('새로운 임차인'));
+  assert.ok(!body.ocrText.includes('1234-5678'), '돌려주는 글도 가린 뒤');
+  assert.equal(body.tokens, 200);
+
+  const [ocr, explain] = hasa.calls;
+  assert.equal(ocr.model, OCR_MODELS[0]);
+  assert.equal(ocr.messages[1].content[1].type, 'image_url');
+  assert.equal(ocr.messages[1].content[1].image_url.url, PNG);
+  assert.equal(explain.model, MODEL);
+  assert.ok(!explain.messages[1].content.includes('1234-5678'), '해설 모델에는 가린 글만 간다');
+});
+
+test('사진: 첫 OCR 모델이 사진을 받지 않으면(400·404) 다음 모델로 다시 시도한다', async () => {
+  const hasa = fakeHasaByModel({ [OCR_MODELS[0]]: 404, [OCR_MODELS[1]]: OCR_TEXT, [MODEL]: GOOD_CLAUSES });
+  const res = await handleAnalyze(post({ kind: 'clauses', image: PNG }), { fetchImpl: hasa, env: ENV });
+  assert.equal(res.status, 200);
+  assert.deepEqual(hasa.calls.map((c) => c.model), [...OCR_MODELS, MODEL]);
+});
+
+test('사진: OCR 한도 초과(429)는 다른 모델로 넘기지 않고 바로 429', async () => {
+  const hasa = fakeHasaByModel({ [OCR_MODELS[0]]: 429, [MODEL]: GOOD_CLAUSES });
+  const res = await handleAnalyze(post({ kind: 'clauses', image: PNG }), { fetchImpl: hasa, env: ENV });
+  assert.equal(res.status, 429);
+  assert.equal(hasa.calls.length, 1);
+});
+
+test('사진: 글자를 거의 못 읽으면 422로 다시 찍어 달라고 안내하고 해설은 부르지 않는다', async () => {
+  const hasa = fakeHasaByModel({ [OCR_MODELS[0]]: '○○ ○○', [MODEL]: GOOD_CLAUSES });
+  const res = await handleAnalyze(post({ kind: 'clauses', image: PNG }), { fetchImpl: hasa, env: ENV });
+  assert.equal(res.status, 422);
+  assert.equal((await res.json()).code, 'NO_TEXT');
+  assert.equal(hasa.calls.length, 1);
+});
+
+test('사진: OCR이 시간 제한을 넘기면 504', async () => {
+  const hang = (url, init) => new Promise((_, reject) => { init.signal.addEventListener('abort', () => reject(init.signal.reason)); });
+  const res = await handleAnalyze(post({ kind: 'registry', image: PNG }), { fetchImpl: hang, env: ENV, ocrTimeoutMs: 30 });
+  assert.equal(res.status, 504);
+});
+
+for (const [name, image] of [
+  ['이미지가 아닌 data URL', 'data:application/pdf;base64,JVBERi0x'],
+  ['data URL이 아님', 'https://example.com/a.png'],
+  ['너무 큰 사진', `data:image/jpeg;base64,${'A'.repeat(4_000_001)}`],
+]) {
+  test(`400: ${name} → 오픈하사를 부르지 않는다`, async () => {
+    const hasa = fakeHasaByModel({ [MODEL]: GOOD_CLAUSES });
+    const res = await handleAnalyze(post({ kind: 'clauses', image }), { fetchImpl: hasa, env: ENV });
+    assert.equal(res.status, 400);
+    assert.equal(hasa.calls.length, 0);
+  });
+}
 
 test('지시문에 역할·형식·근거·금지가 모두 있다', () => {
   for (const kind of ['clauses', 'registry']) {

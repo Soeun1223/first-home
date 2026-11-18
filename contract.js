@@ -97,7 +97,7 @@ function taxInfo(s) {
 const MINE = {
   deunggi: (s, d) => `계약일 ${D(d.c)} 당일, 그리고 잔금일 ${D(d.m)} 잔금 직전에 한 번 더 새로 떼서 보세요. 계약하고 잔금 사이에 대출이 새로 잡힐 수 있어요.`,
   gapgu: () => '갑구 맨 아래 소유자 이름이 계약서에 쓸 집주인 이름·신분증과 같은지, 신탁·가압류 기록이 없는지 확인하세요.',
-  eulgu: (s) => `을구에 근저당이 있다면 채권최고액과 내 보증금 ${won(s.deposit)}을 더한 금액이 시세보다 충분히 낮은지 봐야 해요. STEP 1의 AI 등기부 분석 예시에서 계산해 볼 수 있어요.`,
+  eulgu: (s) => `을구에 근저당이 있다면 채권최고액과 내 보증금 ${won(s.deposit)}을 더한 금액이 시세보다 충분히 낮은지 봐야 해요. STEP 1의 AI 등기부 분석에 사진이나 글을 넣으면 계산해 줘요.`,
   geunjeodang: (s, d) => `내 대항력은 ${D(d.daehang)} 0시에 생겨요. 그보다 먼저 설정된 근저당은 경매 때 나보다 먼저 돈을 가져가요.`,
   chaegwon: (s) => `예를 들어 채권최고액이 1억 5,600만 원이면, 경매 비용을 빼고도 집이 ${won(1.56e8 + s.deposit)} 넘게 팔려야 내 보증금 ${won(s.deposit)}을 다 돌려받을 수 있어요.`,
   seonsunwi: (s, d) => `계약일 ${D(d.c)}에 집주인에게 확정일자 부여 현황을 보여 달라고 하면, 나보다 먼저 들어온 세입자의 보증금 합계를 알 수 있어요. 다가구 주택이라면 특히 중요해요.`,
@@ -107,7 +107,7 @@ const MINE = {
   wiban: () => '위반건축물이면 대출이나 보증 심사에서 거절될 수 있어요. 계약 전에 꼭 확인하세요.',
   jeonsega: (s) => s.deposit ? `내 보증금 ${won(s.deposit)}이 시세의 70%를 넘지 않으려면 시세가 ${won(Math.ceil(s.deposit / 0.7 / 1e6) * 1e6)} 이상이어야 해요.` : '보증금을 넣으면 계산해 줘요.',
   imdaein: (s, d) => `계약일 ${D(d.c)}에 집주인에게 확정일자 부여 현황과 국세·지방세 납세증명서를 요청하세요. 법에 있는 의무라 요청해도 실례가 아니에요.`,
-  teukyak: () => 'STEP 2에서 계약서를 올리면 AI가 특약사항을 찾아 위험·주의·권장으로 나눠 쉬운 말로 풀어 줘요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
+  teukyak: () => 'STEP 2에서 계약서 특약 사진이나 글을 넣으면 AI가 특약사항을 찾아 위험·주의·권장으로 나눠 쉬운 말로 풀어 줘요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
   hwakjeong: (s, d) => d.singoTarget
     ? `내 계약은 임대차 신고 대상이에요. ${D(d.singoDue)}까지 계약서를 첨부해 신고하면 확정일자가 자동으로 붙어요.`
     : `내 계약은 임대차 신고 대상이 아니라서 확정일자를 따로 받아야 해요. ${D(d.m)} 전입신고할 때 주민센터에서 함께 받으면 돼요.`,
@@ -202,48 +202,6 @@ function renderSubs() {
   $('#itemsSub').insertAdjacentHTML('afterend', `<p class="desc" style="margin-top:6px">주소·소유자·계좌 확인 근거${S('1,15')}</p>`);
 }
 
-/* AI 등기부 분석 예시 (가상 데이터) */
-const REG = {
-  safe: {
-    price: 32000,
-    gap: [['1', '2019.03.11', '소유권이전', '소유자 김○○ (계약 상대방과 같음)']],
-    eul: [['1', '2021.05.20', '근저당권설정', '채권최고액 금 96,000,000원 · 근저당권자 ○○은행']],
-    max: 9.6e7,
-    flags: [
-      ['ok', '소유자 일치', '갑구 소유자가 계약 상대방과 같아요. 계약일에 신분증으로 한 번 더 확인하세요.', 'gapgu'],
-      ['ok', '소유권 제한 없음', '압류·가압류·신탁 기록이 없어요.', 'gaapryu'],
-      ['warn', '근저당 1건', '을구에 채권최고액 9,600만 원 근저당이 있어요. 아래에서 시세 대비 비율을 확인하세요.', 'chaegwon'],
-    ],
-  },
-  risky: {
-    price: 28000,
-    gap: [
-      ['1', '2023.02.06', '소유권이전', '소유자 박○○'],
-      ['2', '2023.08.14', '신탁', '수탁자 ○○부동산신탁 (신탁원부 제2023-○○호)'],
-      ['3', '2026.07.02', '가압류', '청구금액 금 30,000,000원 · 채권자 ○○캐피탈'],
-    ],
-    eul: [['1', '2023.02.06', '근저당권설정', '채권최고액 금 240,000,000원 · 근저당권자 ○○저축은행']],
-    max: 2.4e8,
-    flags: [
-      ['risk', '신탁등기', '소유권이 신탁회사에 있어요. 신탁회사 동의 없이 맺은 계약은 효력이 제한돼요.', 'sintak'],
-      ['risk', '가압류', '2026.07 가압류가 있어요. 경매로 이어질 수 있고 반환보증 가입도 어려워요.', 'gaapryu'],
-      ['warn', '큰 근저당', '채권최고액 2억 4천만 원이 시세에 비해 커요.', 'chaegwon'],
-    ],
-  },
-};
-let regKey = 'risky';
-function renderRegistry(resetPrice) {
-  const r = REG[regKey];
-  if (resetPrice) $('#price').value = r.price;
-  const row = (part, rows) => rows.map((x, i) => `<tr>${i === 0 ? `<td class="part" rowspan="${rows.length}">${part}</td>` : ''}<td class="num">${x[0]}</td><td class="num">${x[1]}</td><td>${x[2]}</td><td>${x[3]}</td></tr>`).join('');
-  $('#regTable').innerHTML = `<thead><tr><th>구분</th><th>순위</th><th>접수</th><th>등기 목적</th><th>권리자 및 기타</th></tr></thead><tbody>${row(T('gapgu', '갑구'), r.gap)}${row(T('eulgu', '을구'), r.eul)}</tbody>`;
-  const label = { ok: '안전', warn: '주의', risk: '위험' };
-  $('#regFlags').innerHTML = r.flags.map(([lv, t, d, k]) => `<li><span class="chip ${lv}">${label[lv]}</span><span><b>${T(k, t)}</b> · ${d}</span></li>`).join('');
-  renderMeter();
-}
-function renderMeter() {
-  $('#regMeter').innerHTML = meterHTML((Number($('#price').value) || 0) * 1e4, REG[regKey].max);
-}
 // 전세가율과 선순위 채권최고액 비율 (AI가 아니라 이 계산식으로 판정합니다)
 function meterHTML(price, maxClaims) {
   if (!price) return '<span class="status">시세를 넣으면 비율을 계산해요.</span>';
@@ -257,28 +215,6 @@ function meterHTML(price, maxClaims) {
     <div class="lab"><span>${T('seonsunwi', '선순위')} 채권최고액까지 더하면</span><b class="num">${Math.round(total * 100)}%</b></div>
     ${bar(total, lv(total) === 'ok' ? '--green' : lv(total) === 'warn' ? '--amber' : '--red')}
     <p class="desc" style="margin:0">검은 선은 70%예요. 서울시는 전세가율 70% 이하를 권해요${S('15')}. ${total > 1 ? '<b style="color:var(--red)">빚과 보증금을 합친 금액이 시세를 넘어요. 깡통전세 위험이 커요.</b>' : total > 0.7 ? '빚까지 합치면 70%를 넘어요. 다른 세입자 보증금도 확인하세요.' : '빚까지 합쳐도 70% 이하예요.'}</p>`;
-}
-
-/* AI 특약 해설 예시 */
-const CLAUSES = [
-  ['risk', '임대인은 보증금을 새로운 임차인이 입주한 후 반환한다.',
-    '보증금 반환을 다음 세입자에게 묶어 둔 문구예요. 새 세입자가 안 구해지면 만료일에 돈을 못 받을 수 있어요.',
-    '"임대인은 계약 만료일에 보증금 전액을 반환한다."로 바꿔 달라고 하세요.'],
-  ['warn', '임차인은 퇴실 시 모든 원상복구 비용을 부담한다.',
-    '"모든"의 범위가 모호해요. 오래 살면서 생기는 자연스러운 낡음까지 포함되는지 다툼이 생길 수 있어요.',
-    '"임차인의 고의·과실로 생긴 훼손에 한한다."로 범위를 좁히고, 입주 날 사진을 남기세요.'],
-  ['ok', '임대인은 잔금일 다음 날까지 이 주택에 저당권 등 담보권을 설정하지 않는다. 위반 시 임차인은 계약을 해제할 수 있고 임대인은 보증금 전액을 즉시 반환한다.',
-    `잔금일부터 ${T('daehang', '대항력')}이 생기는 다음 날 0시까지 하루 동안 생기는 공백을 막아 주는 특약이에요.`,
-    '그대로 넣으세요. 이 서비스가 기본으로 권하는 특약이에요.'],
-  ['ok', '임대인의 사유로 전세보증금반환보증 가입이 거절되면 임차인은 계약을 해제할 수 있고, 임대인은 받은 금액 전부를 돌려준다.',
-    `${T('hug', '반환보증')} 가입이 막히는 집(위반건축물, 과도한 빚 등)이면 계약을 물릴 수 있게 해 줘요.`,
-    '보증금이 크다면 넣는 걸 권해요.'],
-];
-function renderClauses() {
-  const label = { ok: '권장', warn: '주의', risk: '위험' };
-  $('#clauses').innerHTML = CLAUSES.map(([lv, q, why, fix]) => `
-    <div class="clause"><div><span class="chip ${lv}">${label[lv]}</span></div>
-      <q>${q}</q><span>${why}</span><span class="fix"><b>AI 제안</b> · ${fix}</span></div>`).join('');
 }
 
 /* 보증금 보호 절차 점검 */
@@ -322,7 +258,7 @@ function renderAll() {
   renderVerdicts();
   renderTimeline();
   renderStepTexts();
-  renderMeter();
+  renderLiveMeter();
   renderProtect();
   renderProgress();
   if (Object.keys(TERMS).length) renderGlossary();
@@ -514,116 +450,24 @@ $$('.form-panel input, .form-panel select').forEach((el) => el.addEventListener(
   autosave();
 }));
 $$('#income, #fee').forEach((el) => el.addEventListener('input', () => { renderStepTexts(); saveDraft(); }));
-$('#price').addEventListener('input', renderMeter);
 document.addEventListener('change', (e) => {
   if (e.target.matches('.checks input[type="checkbox"], [data-sub]')) { renderProgress(); renderProtect(); saveDraft(); autosave(); }
 });
-/* ───────── AI 업로드 흐름 (목업): 파일 선택 → 분석 단계 표시 → 예시 결과 ─────────
-   실제 서비스에서는 이 자리에서 파일을 Vercel 함수로 보내 AI(OCR + LLM)가 읽습니다.
-   목업은 파일을 브라우저 밖으로 보내지 않고, 이름·미리보기만 보여 준 뒤 예시 결과를 펼칩니다. */
-const AI_STEPS = {
-  reg: ['문서 글자 읽기 (OCR)', '표제부·갑구·을구 기록 나누기', '근저당·신탁·가압류 위험 신호 찾기'],
-  contract: ['계약서 글자 읽기 (OCR)', '특약사항 조항 찾기', '내 계약 기준으로 위험도 판단하기'],
-};
-const MAX_FILE = 10 * 1024 * 1024;
-const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-const wait = (ms) => new Promise((r) => setTimeout(r, slow ? ms : 0));
 
-function aiParts(kind) {
-  const box = $(`.ai-upload[data-ai="${kind}"]`);
-  const body = box.parentElement;
-  return { box, body, progress: $('.ai-progress', body), result: $('.ai-result', body), chip: $('[data-file]', body) };
-}
-let previewUrl = {};
-async function runAI(kind, file) {
-  const p = aiParts(kind);
-  const err = $('.err', p.box);
-  if (err) err.remove();
-  if (file && !(/^image\//.test(file.type) || file.type === 'application/pdf')) {
-    p.box.insertAdjacentHTML('beforeend', '<p class="note err" role="alert">사진(JPG·PNG 등)이나 PDF 파일만 올릴 수 있어요.</p>');
-    return;
-  }
-  if (file && file.size > MAX_FILE) {
-    p.box.insertAdjacentHTML('beforeend', '<p class="note err" role="alert">파일이 10MB를 넘어요. 더 작은 사진이나 PDF로 올려 주세요.</p>');
-    return;
-  }
-  if (previewUrl[kind]) URL.revokeObjectURL(previewUrl[kind]);
-  previewUrl[kind] = file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
-  const name = file ? file.name : (kind === 'reg' ? '샘플_등기사항전부증명서.pdf' : '샘플_주택임대차계약서.pdf');
-  const thumb = previewUrl[kind] ? `<img src="${previewUrl[kind]}" alt="">` : '<span class="pdf">PDF</span>';
-  p.chip.innerHTML = `${thumb}<span>${esc(name)}</span>`;
-
-  p.box.hidden = true;
-  p.result.hidden = true;
-  p.progress.hidden = false;
-  const steps = AI_STEPS[kind];
-  p.progress.innerHTML = `<div class="file-chip">${thumb}<span>${esc(name)}</span></div>
-    <ol class="ai-steps">${steps.map((s) => `<li>${s}</li>`).join('')}</ol>
-    <p class="note" role="status">AI가 문서를 읽고 있어요…</p>`;
-  const items = $$('.ai-steps li', p.progress);
-  for (const li of items) { li.classList.add('doing'); await wait(650); li.classList.replace('doing', 'done'); }
-  await wait(250);
-
-  p.progress.hidden = true;
-  p.result.hidden = false;
-  if (kind === 'reg') renderRegistry(true);
-  else {
-    const n = { risk: 0, warn: 0, ok: 0 };
-    CLAUSES.forEach(([lv]) => { n[lv] += 1; });
-    $('#clauseSummary').innerHTML = `특약 ${CLAUSES.length}개를 찾았어요 · <span class="chip risk">위험 ${n.risk}</span> <span class="chip warn">주의 ${n.warn}</span> <span class="chip ok">권장 ${n.ok}</span>`;
-  }
-  p.result.querySelector('.result-h').scrollIntoView({ block: 'nearest', behavior: slow ? 'smooth' : 'auto' });
-}
-function resetAI(kind) {
-  const p = aiParts(kind);
-  if (previewUrl[kind]) { URL.revokeObjectURL(previewUrl[kind]); previewUrl[kind] = null; }
-  $('input[type="file"]', p.box).value = '';
-  p.result.hidden = true;
-  p.progress.hidden = true;
-  p.box.hidden = false;
-}
-$$('.ai-upload').forEach((box) => {
-  const kind = box.dataset.ai;
-  const input = $('input[type="file"]', box);
-  const drop = $('.drop', box);
-  input.addEventListener('change', () => { if (input.files[0]) runAI(kind, input.files[0]); });
-  ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
-  drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) runAI(kind, f); });
-  $('[data-reset]', box.parentElement).addEventListener('click', () => resetAI(kind));
-});
-
-/* ───────── AI 실제 연결: 붙여 넣은 글 → /api/analyze → 오픈하사 ─────────
-   버튼은 답이 올 때까지 잠그고, 같은 글은 이 탭에서 다시 묻지 않습니다(하루 500건 한도 아끼기). */
+/* ───────── AI 특약 해설·등기부 분석: 사진 또는 글 → /api/analyze → 오픈하사 ─────────
+   사진이면 서버가 오픈하사 OCR 모델로 글자를 읽은 뒤 해설합니다. 읽은 글은 입력칸에 채워 고칠 수 있게 합니다.
+   버튼은 답이 올 때까지 잠그고, 같은 사진·글은 이 탭에서 다시 묻지 않습니다(하루 500건 한도 아끼기). */
 const LIVE_LIMIT = { clauses: 1500, registry: 3000 };
 const LIVE_CACHE = new Map();
-// '예시 넣기' 글: 공개된 등기부 예시 이미지와 실제 계약서 특약 사진(개인정보는 가려진 상태)을 옮겨 적었어요.
-// 사진에서 가려져 있던 부분은 비워 두거나 ○○로 적었어요.
+const LIVE_PHOTO = {}; // kind → {data: data URL, name}
+// '예시 넣기' 사진: 공개된 등기부 예시 이미지, 개인정보를 가린 실제 계약서 특약 사진
 const LIVE_EXAMPLES = {
-  registry: [
-    '등기부 등본 (현재 유효사항) - 건물 · 예시',
-    '【표제부】 (건물의 표시)',
-    '1 (전 1) 1984년7월11일 서울특별시 강남구 삼성동 철근콘크리트조 평슬래브지붕 3층 근린생활시설 1층 148.68㎡ 2층 148.68㎡ 3층 148.68㎡ 지하1층 148.68㎡ 옥탑 14.14㎡ 도면편철장 제2책제419장',
-    '【갑구】 (소유권에 관한 사항)',
-    '1 (전 1) 소유권보존 1984년7월11일 제25682호 소유자 홍길동 401010-******* 서울특별시 서초구 서초동 ○○아파트',
-    '【을구】 (소유권 이외의 권리에 관한 사항)',
-    '1 전세권설정 1990년12월12일 1990년12월8일 설정계약 전세금 220,000,000원정',
-    '* 실선으로 그어진 부분은 말소사항을 표시함.',
-  ].join('\n'),
-  clauses: [
-    '[특약사항]',
-    '1. 현 시설물 상태에서 임대차 한다.',
-    '2. 임대 할 부분의 면적은 공부상 면적이다.',
-    '3. 임차인은 애견으로 인한 옵션 및 주요시설물, 벽지, 도배 등 임의파손 시 원상회복 의무를 진다. 원상회복 미 이행시 보증금에서 사후 정산 후 지급한다. 단, 자체결함은 제외한다.',
-    '4. 임차인은 계약만기 2개월 전 까지 임대인에게 통보해야하며 서면 또는 유선으로 계약종료 의사표시가 없을 경우 동일한 조건으로 자동연장 되는 것으로 간주한다. 계약만료 전 퇴실 시 다음 입주자 입주 시 까지 관리비와 부동산 중개보수는 임차인이 전액 부담한다.',
-    '5. 옵션-침대, 에어컨, 티비, 쇼파, 책상, 의자, 냉장고, 전자레인지 등이며, 고의적인 파손시 배상하기로 한다.',
-    '6. 건물내부 흡연을 금지함.(흡연으로 인한 찌든때 등의 비용은 임차인이 부담한다)',
-    '7. 임차인은 계약체결일로 부터 30일 안에 전월세신고를 하여야 한다.',
-    '8. 임대인 계좌번호: ○○○',
-    '9. 기타사항은 민법 및 관례에 따르기로 한다.',
-    '10. 전기 051-123, 도시가스 1544-0009 (이사 1~2일 전에 미리 신청하기)',
-  ].join('\n'),
+  registry: { src: 'images/example-registry.jpg', name: '예시 등기부등본.jpg' },
+  clauses: { src: 'images/example-clauses.jpg', name: '예시 계약서 특약사항.jpg' },
 };
+const MAX_PHOTO_CHARS = 3_900_000; // 서버 한도(4,000,000자)보다 조금 작게
+const PHOTO_EDGE = 2000; // 긴 변을 이 픽셀까지 줄여서 보냅니다
+const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
 const AI_DISCLAIMER = '<p class="live-warn">AI 답은 틀릴 수 있고 법률 자문이 아니에요. 계약 전에는 원문과 공식 안내, 전문가에게 꼭 다시 확인하세요.</p>';
 
@@ -635,7 +479,7 @@ function countChips(rows, kind) {
 }
 function renderLiveClauses(out, data) {
   const L = LEVEL_LABEL.clauses;
-  if (!data.items.length) { out.innerHTML = `<p class="found">특약으로 보이는 조항을 찾지 못했어요. 특약사항 부분만 다시 붙여 넣어 보세요.</p>${AI_DISCLAIMER}`; return; }
+  if (!data.items.length) { out.innerHTML = `<p class="found">특약으로 보이는 조항을 찾지 못했어요. 특약사항 부분이 잘 보이게 다시 넣어 보세요.</p>${AI_DISCLAIMER}`; return; }
   out.innerHTML = `
     <p class="found">특약 ${data.items.length}개를 풀었어요 · ${countChips(data.items, 'clauses')}</p>
     <div class="clauses">${data.items.map((x) => `
@@ -651,89 +495,167 @@ function renderLiveRegistry(out, data) {
   out.innerHTML = `
     ${data.flags.length ? `<p class="found">AI가 찾은 신호 ${data.flags.length}개 · ${countChips(data.flags, 'registry')}</p>
     <ul class="flags">${data.flags.map((f) => `<li><span class="chip ${f.level}">${L[f.level]}</span><span><b>${esc(f.title)}</b> · ${esc(f.detail)}</span></li>`).join('')}</ul>`
-    : '<p class="found">AI가 등기부 기록을 찾지 못했어요. 갑구·을구 부분을 다시 붙여 넣어 보세요.</p>'}
+    : '<p class="found">AI가 등기부 기록을 찾지 못했어요. 갑구·을구가 잘 보이게 다시 넣어 보세요.</p>'}
     <p class="live-signals"><b>글에서 바로 찾은 낱말</b> ${signals}<br><small>AI와 별개로 서비스가 직접 찾았어요. ‘말소’라고 적힌 줄은 뺐어요.</small></p>
     <div class="row2">
       <div class="field"><label for="liveMax">선순위 채권최고액·전세금 합계 (만 원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
       <div class="field"><label for="livePrice">이 집 시세 (만 원)</label><input type="number" id="livePrice" min="0" step="500" placeholder="실거래가로 확인"></div>
     </div>
-    <p class="desc" style="margin:0">근저당 채권최고액과 전세권 전세금을 글에서 찾아 숫자만 더한 값이에요. 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
+    <p class="desc" style="margin:0">근저당 채권최고액과 전세권 전세금을 글에서 찾아 숫자만 더한 값이에요. 잘못 읽었거나 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
     <div class="meter" id="liveMeter"></div>${AI_DISCLAIMER}`;
-  const meter = () => { $('#liveMeter').innerHTML = meterHTML((Number($('#livePrice').value) || 0) * 1e4, (Number($('#liveMax').value) || 0) * 1e4); };
-  $$('#liveMax, #livePrice').forEach((el) => el.addEventListener('input', meter));
-  meter();
+  $$('#liveMax, #livePrice').forEach((el) => el.addEventListener('input', renderLiveMeter));
+  renderLiveMeter();
+}
+// 보증금을 바꿔도 비율이 따라 바뀌도록 renderAll에서도 부릅니다
+function renderLiveMeter() {
+  const meter = $('#liveMeter');
+  if (meter) meter.innerHTML = meterHTML((Number($('#livePrice').value) || 0) * 1e4, (Number($('#liveMax').value) || 0) * 1e4);
+}
+
+/* 사진 넣기 · 빼기 */
+function liveParts(form) {
+  return {
+    kind: form.dataset.live, area: $('textarea', form), btn: $('button[type="submit"]', form),
+    status: $('[data-status]', form), out: $('[data-out]', form), count: $('[data-count]', form),
+    photo: $('[data-photo]', form), img: $('[data-photo-img]', form), name: $('[data-photo-name]', form),
+  };
+}
+function sayLive(p, msg, err) { p.status.textContent = msg; p.status.classList.toggle('err', !!err); }
+function updateCount(p) {
+  p.count.textContent = LIVE_PHOTO[p.kind]
+    ? '사진을 보내면 읽은 글이 이 칸에 채워져요'
+    : `${p.area.value.length.toLocaleString('ko-KR')} / ${LIVE_LIMIT[p.kind].toLocaleString('ko-KR')}자`;
+}
+function setPhoto(form, data, name) {
+  const p = liveParts(form);
+  if (data) LIVE_PHOTO[p.kind] = { data, name }; else delete LIVE_PHOTO[p.kind];
+  p.photo.hidden = !data;
+  p.img.src = data || '';
+  p.img.alt = data ? `${name} 미리 보기` : '';
+  p.name.textContent = name || '';
+  p.area.placeholder = data ? '사진을 보내면 AI가 읽은 글이 여기에 채워져요.' : p.area.dataset.placeholder;
+  updateCount(p);
+}
+// 큰 사진은 긴 변 2,000px JPEG로 줄여 보냅니다(서버 본문 한도와 업로드 시간 때문)
+function readPhoto(blob) {
+  return new Promise((ok, fail) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, PHOTO_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      ok(canvas.toDataURL('image/jpeg', 0.88));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); fail(new Error('사진을 열지 못했어요. 다른 사진으로 올려 주세요.')); };
+    img.src = url;
+  });
+}
+async function usePhotoFile(form, file) {
+  const p = liveParts(form);
+  if (file.type === 'application/pdf') { sayLive(p, 'PDF는 아직 읽지 못해요. 화면을 캡처하거나 사진(JPG·PNG)으로 올려 주세요.', true); return; }
+  if (!file.type.startsWith('image/')) { sayLive(p, '사진(JPG·PNG 등)만 올릴 수 있어요.', true); return; }
+  try {
+    const data = await readPhoto(file);
+    if (data.length > MAX_PHOTO_CHARS) { sayLive(p, '사진이 너무 커요. 더 작은 사진으로 올려 주세요.', true); return; }
+    setPhoto(form, data, file.name);
+    sayLive(p, '사진을 넣었어요. 이름·주민번호·연락처가 보이지 않는지 확인하고 AI에 보내 주세요.');
+  } catch (err) {
+    sayLive(p, err.message, true);
+  }
 }
 
 async function runLive(form) {
-  const kind = form.dataset.live;
-  const text = $('textarea', form).value.trim();
-  const btn = $('button[type="submit"]', form);
-  const status = $('[data-status]', form);
-  const out = $('[data-out]', form);
-  const say = (msg, err) => { status.textContent = msg; status.classList.toggle('err', !!err); };
+  const p = liveParts(form);
+  const photo = LIVE_PHOTO[p.kind];
+  const text = p.area.value.trim();
+  if (p.btn.disabled) return;
+  if (!photo) {
+    if (text.length < 10) { sayLive(p, '사진을 올리거나, 분석할 글을 10자 이상 붙여 넣어 주세요.', true); p.area.focus(); return; }
+    if (text.length > LIVE_LIMIT[p.kind]) { sayLive(p, `${LIVE_LIMIT[p.kind].toLocaleString('ko-KR')}자 이하로 줄여 주세요.`, true); return; }
+  }
 
-  if (btn.disabled) return;
-  if (text.length < 10) { say('분석할 글을 10자 이상 붙여 넣어 주세요.', true); $('textarea', form).focus(); return; }
-  if (text.length > LIVE_LIMIT[kind]) { say(`${LIVE_LIMIT[kind].toLocaleString('ko-KR')}자 이하로 줄여 주세요.`, true); return; }
-
-  const cacheKey = `${kind}\n${text}`;
+  const payload = photo ? { kind: p.kind, image: photo.data } : { kind: p.kind, text };
+  const cacheKey = `${p.kind}\n${photo ? photo.data : text}`;
   let data = LIVE_CACHE.get(cacheKey);
   if (!data) {
-    btn.disabled = true;
-    const label = btn.textContent;
-    btn.textContent = 'AI가 읽는 중…';
-    say('AI가 글을 읽고 있어요. 길면 20초쯤 걸려요.');
+    const label = p.btn.textContent;
+    $$('button', form).forEach((b) => { b.disabled = true; });
+    p.btn.textContent = photo ? 'AI가 사진을 읽는 중…' : 'AI가 읽는 중…';
+    sayLive(p, photo ? 'AI가 사진에서 글자를 읽고 해설하고 있어요. 30초쯤 걸릴 수 있어요.' : 'AI가 글을 읽고 있어요. 길면 20초쯤 걸려요.');
     form.setAttribute('aria-busy', 'true');
     try {
-      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, text }) });
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         const retry = [429, 502, 504].includes(res.status) ? ' 같은 버튼으로 다시 받을 수 있어요.' : '';
-        say(`${body.error || `AI 분석에 실패했어요 (${res.status}).`}${retry}`, true);
+        sayLive(p, `${body.error || `AI 분석에 실패했어요 (${res.status}).`}${retry}`, true);
         return;
       }
       data = body;
       LIVE_CACHE.set(cacheKey, data);
     } catch {
-      say('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', true);
+      sayLive(p, '서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', true);
       return;
     } finally {
-      btn.disabled = false;
-      btn.textContent = label;
+      $$('button', form).forEach((b) => { b.disabled = false; });
+      p.btn.textContent = label;
       form.removeAttribute('aria-busy');
     }
   }
-  say(data.masked ? `개인정보로 보이는 ${data.masked}곳을 가린 뒤 AI에 보냈어요.` : 'AI 답을 받았어요.');
-  out.hidden = false;
-  if (kind === 'clauses') renderLiveClauses(out, data);
-  else renderLiveRegistry(out, data);
-  out.scrollIntoView({ block: 'nearest', behavior: slow ? 'smooth' : 'auto' });
+
+  if (photo && data.ocrText) {
+    // 읽은 글을 칸에 채우고 사진은 내려놓습니다. 글을 고쳐 다시 보내면 사진 대신 그 글로 분석해요
+    setPhoto(form, null);
+    p.area.value = data.ocrText;
+    updateCount(p);
+    LIVE_CACHE.set(`${p.kind}\n${data.ocrText.trim()}`, data);
+  }
+  const masked = data.masked ? ` 개인정보로 보이는 ${data.masked}곳을 가렸어요.` : '';
+  sayLive(p, photo ? `사진에서 읽은 글을 위 칸에 채웠어요. 틀린 글자가 있으면 고쳐서 다시 보낼 수 있어요.${masked}` : `AI 답을 받았어요.${masked}`);
+  p.out.hidden = false;
+  if (p.kind === 'clauses') renderLiveClauses(p.out, data);
+  else renderLiveRegistry(p.out, data);
+  p.out.scrollIntoView({ block: 'nearest', behavior: slow ? 'smooth' : 'auto' });
 }
+
 $$('.ai-live').forEach((form) => {
-  const area = $('textarea', form);
-  const count = $('[data-count]', form);
-  const max = LIVE_LIMIT[form.dataset.live];
-  const update = () => { count.textContent = `${area.value.length.toLocaleString('ko-KR')} / ${max.toLocaleString('ko-KR')}자`; };
-  area.addEventListener('input', update);
-  update();
-  $('[data-example]', form).addEventListener('click', () => {
-    area.value = LIVE_EXAMPLES[form.dataset.live];
-    update();
-    area.focus();
-    area.setSelectionRange(0, 0);
-    area.scrollTop = 0;
-    const status = $('[data-status]', form);
-    status.textContent = '예시 글을 넣었어요. 고쳐 써도 되고, 그대로 AI에 보내 봐도 돼요.';
-    status.classList.remove('err');
+  const p = liveParts(form);
+  const input = $('[data-photo-input]', form);
+  p.area.dataset.placeholder = p.area.placeholder;
+  p.area.addEventListener('input', () => updateCount(p));
+  updateCount(p);
+  $('[data-photo-pick]', form).addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { if (input.files[0]) usePhotoFile(form, input.files[0]); input.value = ''; });
+  $('[data-photo-clear]', form).addEventListener('click', () => { setPhoto(form, null); sayLive(p, '사진을 뺐어요.'); });
+  $('[data-example]', form).addEventListener('click', async () => {
+    const ex = LIVE_EXAMPLES[p.kind];
+    try {
+      const res = await fetch(ex.src);
+      if (!res.ok) throw new Error();
+      setPhoto(form, await readPhoto(await res.blob()), ex.name);
+      p.area.value = '';
+      updateCount(p);
+      sayLive(p, '예시 사진을 넣었어요. 버튼을 누르면 AI가 사진을 읽고 해설해요.');
+    } catch {
+      sayLive(p, '예시 사진을 불러오지 못했어요. 새로고침 뒤 다시 눌러 주세요.', true);
+    }
   });
+  // 사진을 칸에 끌어다 놓아도 됩니다
+  ['dragover', 'drop'].forEach((t) => form.addEventListener(t, (e) => {
+    if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+    e.preventDefault();
+    if (t === 'drop' && e.dataTransfer.files[0]) usePhotoFile(form, e.dataTransfer.files[0]);
+  }));
   form.addEventListener('submit', (e) => { e.preventDefault(); runLive(form); });
 });
 
-$$('#regDemo .tabs button').forEach((b) => b.addEventListener('click', () => {
-  regKey = b.dataset.sample;
-  $$('#regDemo .tabs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-  renderRegistry(true);
-}));
 $('#saveBtn').addEventListener('click', save);
 $('#calCopy').addEventListener('click', async (e) => {
   const url = e.currentTarget.dataset.url;
@@ -763,11 +685,9 @@ window.zipkimiContract = {
 /* ───────── 시작 ───────── */
 renderSources();
 renderSubs();
-renderClauses();
 const startCode = new URLSearchParams(location.search).get('plan');
 if (!startCode && restoreDraft()) setStatus('이 브라우저에 저장해 둔 계약 준비 내용을 불러왔어요.');
 state = readState(); info = derive(state);
-renderRegistry(true);
 renderAll();
 loadTerms();
 if (startCode) loadPlan(startCode);
