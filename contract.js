@@ -242,14 +242,16 @@ function renderRegistry(resetPrice) {
   renderMeter();
 }
 function renderMeter() {
-  const r = REG[regKey];
-  const price = (Number($('#price').value) || 0) * 1e4;
-  if (!price) { $('#regMeter').innerHTML = '<span class="status">시세를 넣으면 비율을 계산해요.</span>'; return; }
+  $('#regMeter').innerHTML = meterHTML((Number($('#price').value) || 0) * 1e4, REG[regKey].max);
+}
+// 전세가율과 선순위 채권최고액 비율 (AI가 아니라 이 계산식으로 판정합니다)
+function meterHTML(price, maxClaims) {
+  if (!price) return '<span class="status">시세를 넣으면 비율을 계산해요.</span>';
   const dep = state.deposit;
-  const jeonse = dep / price, total = (dep + r.max) / price;
+  const jeonse = dep / price, total = (dep + maxClaims) / price;
   const bar = (v, color) => `<div class="bar"><span style="width:${Math.min(v, 1) * 100}%;background:var(${color})"></span><i class="tick" style="left:70%"></i></div>`;
   const lv = (v) => v > 0.7 ? (v > 1 ? 'risk' : 'warn') : 'ok';
-  $('#regMeter').innerHTML = `
+  return `
     <div class="lab"><span>${T('jeonsega', '전세가율')} = 내 보증금 ${won(dep)} ÷ 시세</span><b class="num">${Math.round(jeonse * 100)}%</b></div>
     ${bar(jeonse, lv(jeonse) === 'ok' ? '--green' : lv(jeonse) === 'warn' ? '--amber' : '--red')}
     <div class="lab"><span>${T('seonsunwi', '선순위')} 채권최고액까지 더하면</span><b class="num">${Math.round(total * 100)}%</b></div>
@@ -590,6 +592,105 @@ $$('.ai-upload').forEach((box) => {
   ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
   drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) runAI(kind, f); });
   $('[data-reset]', box.parentElement).addEventListener('click', () => resetAI(kind));
+});
+
+/* ───────── AI 실제 연결: 붙여 넣은 글 → /api/analyze → 오픈하사 ─────────
+   버튼은 답이 올 때까지 잠그고, 같은 글은 이 탭에서 다시 묻지 않습니다(하루 500건 한도 아끼기). */
+const LIVE_LIMIT = { clauses: 1500, registry: 3000 };
+const LIVE_CACHE = new Map();
+const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
+const AI_DISCLAIMER = '<p class="live-warn">AI 답은 틀릴 수 있고 법률 자문이 아니에요. 계약 전에는 원문과 공식 안내, 전문가에게 꼭 다시 확인하세요.</p>';
+
+function countChips(rows, kind) {
+  const n = { risk: 0, warn: 0, ok: 0 };
+  rows.forEach((r) => { n[r.level] += 1; });
+  const L = LEVEL_LABEL[kind];
+  return ['risk', 'warn', 'ok'].filter((lv) => n[lv]).map((lv) => `<span class="chip ${lv}">${L[lv]} ${n[lv]}</span>`).join(' ');
+}
+function renderLiveClauses(out, data) {
+  const L = LEVEL_LABEL.clauses;
+  if (!data.items.length) { out.innerHTML = `<p class="found">특약으로 보이는 조항을 찾지 못했어요. 특약사항 부분만 다시 붙여 넣어 보세요.</p>${AI_DISCLAIMER}`; return; }
+  out.innerHTML = `
+    <p class="found">특약 ${data.items.length}개를 풀었어요 · ${countChips(data.items, 'clauses')}</p>
+    <div class="clauses">${data.items.map((x) => `
+      <div class="clause"><div><span class="chip ${x.level}">${L[x.level]}</span></div>
+        <q>${esc(x.quote)}</q><span>${esc(x.why)}</span>${x.fix ? `<span class="fix"><b>AI 제안</b> · ${esc(x.fix)}</span>` : ''}</div>`).join('')}
+    </div>${AI_DISCLAIMER}`;
+}
+function renderLiveRegistry(out, data) {
+  const L = LEVEL_LABEL.registry;
+  const signals = data.signals.length
+    ? data.signals.map((w) => `<span class="chip ${['근저당권', '전세권'].includes(w) ? 'warn' : 'risk'}">${esc(w)}</span>`).join(' ')
+    : '<span class="chip ok">위험 낱말 없음</span>';
+  out.innerHTML = `
+    ${data.flags.length ? `<p class="found">AI가 찾은 신호 ${data.flags.length}개 · ${countChips(data.flags, 'registry')}</p>
+    <ul class="flags">${data.flags.map((f) => `<li><span class="chip ${f.level}">${L[f.level]}</span><span><b>${esc(f.title)}</b> · ${esc(f.detail)}</span></li>`).join('')}</ul>`
+    : '<p class="found">AI가 등기부 기록을 찾지 못했어요. 갑구·을구 부분을 다시 붙여 넣어 보세요.</p>'}
+    <p class="live-signals"><b>글에서 바로 찾은 낱말</b> ${signals}<br><small>AI와 별개로 서비스가 직접 찾았어요. ‘말소’라고 적힌 줄은 뺐어요.</small></p>
+    <div class="row2">
+      <div class="field"><label for="liveMax">선순위 채권최고액 합계 (만 원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
+      <div class="field"><label for="livePrice">이 집 시세 (만 원)</label><input type="number" id="livePrice" min="0" step="500" placeholder="실거래가로 확인"></div>
+    </div>
+    <p class="desc" style="margin:0">채권최고액은 글에서 숫자만 더한 값이에요. 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
+    <div class="meter" id="liveMeter"></div>${AI_DISCLAIMER}`;
+  const meter = () => { $('#liveMeter').innerHTML = meterHTML((Number($('#livePrice').value) || 0) * 1e4, (Number($('#liveMax').value) || 0) * 1e4); };
+  $$('#liveMax, #livePrice').forEach((el) => el.addEventListener('input', meter));
+  meter();
+}
+
+async function runLive(form) {
+  const kind = form.dataset.live;
+  const text = $('textarea', form).value.trim();
+  const btn = $('button[type="submit"]', form);
+  const status = $('[data-status]', form);
+  const out = $('[data-out]', form);
+  const say = (msg, err) => { status.textContent = msg; status.classList.toggle('err', !!err); };
+
+  if (btn.disabled) return;
+  if (text.length < 10) { say('분석할 글을 10자 이상 붙여 넣어 주세요.', true); $('textarea', form).focus(); return; }
+  if (text.length > LIVE_LIMIT[kind]) { say(`${LIVE_LIMIT[kind].toLocaleString('ko-KR')}자 이하로 줄여 주세요.`, true); return; }
+
+  const cacheKey = `${kind}\n${text}`;
+  let data = LIVE_CACHE.get(cacheKey);
+  if (!data) {
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = 'AI가 읽는 중…';
+    say('AI가 글을 읽고 있어요. 길면 20초쯤 걸려요.');
+    form.setAttribute('aria-busy', 'true');
+    try {
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, text }) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const retry = [429, 502, 504].includes(res.status) ? ' 같은 버튼으로 다시 받을 수 있어요.' : '';
+        say(`${body.error || `AI 분석에 실패했어요 (${res.status}).`}${retry}`, true);
+        return;
+      }
+      data = body;
+      LIVE_CACHE.set(cacheKey, data);
+    } catch {
+      say('서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', true);
+      return;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+      form.removeAttribute('aria-busy');
+    }
+  }
+  say(data.masked ? `개인정보로 보이는 ${data.masked}곳을 가린 뒤 AI에 보냈어요.` : 'AI 답을 받았어요.');
+  out.hidden = false;
+  if (kind === 'clauses') renderLiveClauses(out, data);
+  else renderLiveRegistry(out, data);
+  out.scrollIntoView({ block: 'nearest', behavior: slow ? 'smooth' : 'auto' });
+}
+$$('.ai-live').forEach((form) => {
+  const area = $('textarea', form);
+  const count = $('[data-count]', form);
+  const max = LIVE_LIMIT[form.dataset.live];
+  const update = () => { count.textContent = `${area.value.length.toLocaleString('ko-KR')} / ${max.toLocaleString('ko-KR')}자`; };
+  area.addEventListener('input', update);
+  update();
+  form.addEventListener('submit', (e) => { e.preventDefault(); runLive(form); });
 });
 
 $$('#regDemo .tabs button').forEach((b) => b.addEventListener('click', () => {

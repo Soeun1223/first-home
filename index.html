@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261116">
+  <link rel="stylesheet" href="style.css?v=20261118">
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -283,8 +283,17 @@
               </div>
               <div class="extra">
                 <div class="ai" id="regDemo">
-                  <div class="ai-h"><b>AI 등기부 분석</b><span class="ai-tag">목업 · 예시 결과</span></div>
+                  <div class="ai-h"><b>AI 등기부 분석</b><span class="ai-tag">오픈하사 AI</span></div>
                   <div class="ai-body">
+                    <form class="ai-live" data-live="registry" novalidate>
+                      <label for="regText" class="live-h">등기부 갑구·을구 글을 붙여 넣고 AI 분석 받기</label>
+                      <p class="live-notice">붙여 넣은 글은 <b>AI(오픈하사)에 보내져요.</b> 보내기 전에 이름·주민번호·전화번호·동호수는 자동으로 가리고, 서버에 저장하지 않아요.</p>
+                      <textarea id="regText" rows="7" maxlength="3000" placeholder="예) 2 근저당권설정 2021년5월20일 채권최고액 금96,000,000원 근저당권자 ○○은행&#10;3 가압류 2026년7월2일 청구금액 금30,000,000원"></textarea>
+                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 3,000자</span><button type="submit" class="btn">AI 분석 받기</button></div>
+                      <p class="live-status" data-status role="status"></p>
+                      <div class="live-out" data-out hidden></div>
+                    </form>
+                    <p class="ai-or"><span>또는 파일로 예시 결과 보기</span></p>
                     <div class="ai-upload" data-ai="reg">
                       <input type="file" id="regFile" class="sr" accept="image/*,application/pdf">
                       <label for="regFile" class="drop">
@@ -293,7 +302,7 @@
                         <span>눌러서 고르거나 여기로 끌어다 놓으세요</span>
                       </label>
                       <button type="button" class="btn ghost" data-run-sample>샘플 등기부로 해 보기</button>
-                      <p class="note">목업이라 올린 파일은 서버로 보내지 않아요. 분석 결과는 가상 등기부 예시로 보여 줘요.</p>
+                      <p class="note">파일 올리기는 아직 목업이에요. 올린 파일은 서버로 보내지 않고, 가상 등기부 예시로 결과를 보여 줘요.</p>
                     </div>
                     <div class="ai-progress" hidden></div>
                     <div class="ai-result" hidden>
@@ -377,8 +386,17 @@
               </div>
               <div class="extra">
                 <div class="ai">
-                  <div class="ai-h"><b>AI 특약 해설</b><span class="ai-tag">목업 · 예시 결과</span></div>
+                  <div class="ai-h"><b>AI 특약 해설</b><span class="ai-tag">오픈하사 AI</span></div>
                   <div class="ai-body">
+                    <form class="ai-live" data-live="clauses" novalidate>
+                      <label for="clauseText" class="live-h">특약사항 글을 붙여 넣고 AI 해설 받기</label>
+                      <p class="live-notice">붙여 넣은 글은 <b>AI(오픈하사)에 보내져요.</b> 이름·연락처·주소는 빼고 붙여 넣어 주세요. 전화번호·주민번호·계좌번호는 보내기 전에 자동으로 가리고, 서버에 저장하지 않아요.</p>
+                      <textarea id="clauseText" rows="6" maxlength="1500" placeholder="예) 1. 임대인은 보증금을 새로운 임차인이 입주한 후 반환한다.&#10;2. 임차인은 퇴실 시 모든 원상복구 비용을 부담한다."></textarea>
+                      <div class="live-row"><span class="live-count" data-count aria-live="off">0 / 1,500자</span><button type="submit" class="btn">AI 해설 받기</button></div>
+                      <p class="live-status" data-status role="status"></p>
+                      <div class="live-out" data-out hidden></div>
+                    </form>
+                    <p class="ai-or"><span>또는 파일로 예시 결과 보기</span></p>
                     <div class="ai-upload" data-ai="contract">
                       <input type="file" id="contractFile" class="sr" accept="image/*,application/pdf">
                       <label for="contractFile" class="drop">
@@ -387,7 +405,7 @@
                         <span>특약사항이 보이게 찍어 주세요</span>
                       </label>
                       <button type="button" class="btn ghost" data-run-sample>샘플 계약서로 해 보기</button>
-                      <p class="note">목업이라 올린 파일은 서버로 보내지 않아요. 분석 결과는 가상 계약서 예시로 보여 줘요.</p>
+                      <p class="note">파일 올리기는 아직 목업이에요. 올린 파일은 서버로 보내지 않고, 가상 계약서 예시로 결과를 보여 줘요.</p>
                     </div>
                     <div class="ai-progress" hidden></div>
                     <div class="ai-result" hidden>
@@ -514,7 +532,7 @@
   <!-- 저장 알림: 잠깐 떴다가 사라진다 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="contract.js?v=20261111"></script>
+  <script type="module" src="contract.js?v=20261118"></script>
   <script type="module" src="listings.js?v=20261111"></script>
 </body>
 </html>
