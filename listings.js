@@ -466,6 +466,7 @@ function renderCompare() {
         <p class="ref-box"><b>위치 참고</b>${refText(l)}</p>
         <div class="lc-actions">
           <button type="button" class="btn ${chosen ? '' : 'btn-primary'}" data-prepare="${esc(l.id)}">${chosen ? '계약 준비 이어서 하기' : '이 집으로 계약 준비'}</button>
+          <button type="button" class="btn btn-danger" data-delete="${esc(l.id)}" aria-label="${esc(l.name)} 매물 삭제">매물 삭제하기</button>
         </div>
       </li>`;
   }).join('');
@@ -546,6 +547,24 @@ function prepareContract(listing) {
   if (window.zipkimiContract) window.zipkimiContract.fill(listing);
   location.hash = '#/contract';
   showToast('✓ 계약 준비에 이 집 금액을 채웠어요');
+}
+
+// 매물 카드와 상세 화면의 삭제 버튼이 함께 씁니다
+function deleteListing(listing) {
+  if (!confirm(`‘${listing.name}’ 매물을 삭제할까요? 체크한 내용도 함께 지워지고 되돌릴 수 없어요.`)) return;
+  state.listings = state.listings.filter((l) => l.id !== listing.id);
+  if (readChosen() === listing.id) writeChosen(null);
+  save();
+  currentId = null;
+  const done = () => setAppStatus(`<div class="notice notice-info"><p>‘${esc(listing.name)}’ 매물을 삭제했어요.</p></div>`);
+  if (location.hash === '#/' || location.hash === '') {
+    route(); // 이미 비교 화면이면 hashchange가 없으니 직접 다시 그립니다
+    done();
+    $('#app-status').scrollIntoView({ block: 'nearest' });
+  } else {
+    location.hash = '#/';
+    setTimeout(done, 0);
+  }
 }
 
 /* ---------- 상세(체크리스트) 화면 ---------- */
@@ -765,6 +784,12 @@ function bindEvents() {
   });
 
   $('#compare-body').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-delete]');
+    if (del) {
+      const listing = findListing(del.dataset.delete);
+      if (listing) deleteListing(listing);
+      return;
+    }
     const btn = e.target.closest('[data-prepare]');
     if (!btn) return;
     const listing = findListing(btn.dataset.prepare);
@@ -826,14 +851,7 @@ function bindEvents() {
 
   $('#delete-btn').addEventListener('click', () => {
     const listing = findListing(currentId);
-    if (!listing) return;
-    if (!confirm(`‘${listing.name}’ 매물을 삭제할까요? 체크한 내용도 함께 지워지고 되돌릴 수 없어요.`)) return;
-    state.listings = state.listings.filter((l) => l.id !== listing.id);
-    if (readChosen() === listing.id) writeChosen(null);
-    save();
-    currentId = null;
-    location.hash = '#/';
-    setTimeout(() => setAppStatus(`<div class="notice notice-info"><p>‘${esc(listing.name)}’ 매물을 삭제했어요.</p></div>`), 0);
+    if (listing) deleteListing(listing);
   });
 
   $('#checklist-body').addEventListener('change', (e) => {
