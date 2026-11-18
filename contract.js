@@ -587,7 +587,6 @@ $$('.ai-upload').forEach((box) => {
   const input = $('input[type="file"]', box);
   const drop = $('.drop', box);
   input.addEventListener('change', () => { if (input.files[0]) runAI(kind, input.files[0]); });
-  $('[data-run-sample]', box).addEventListener('click', () => runAI(kind, null));
   ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
   drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) runAI(kind, f); });
