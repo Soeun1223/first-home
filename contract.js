@@ -598,6 +598,33 @@ $$('.ai-upload').forEach((box) => {
    버튼은 답이 올 때까지 잠그고, 같은 글은 이 탭에서 다시 묻지 않습니다(하루 500건 한도 아끼기). */
 const LIVE_LIMIT = { clauses: 1500, registry: 3000 };
 const LIVE_CACHE = new Map();
+// '예시 넣기' 글: 공개된 등기부 예시 이미지와 실제 계약서 특약 사진(개인정보는 가려진 상태)을 옮겨 적었어요.
+// 사진에서 가려져 있던 부분은 비워 두거나 ○○로 적었어요.
+const LIVE_EXAMPLES = {
+  registry: [
+    '등기부 등본 (현재 유효사항) - 건물 · 예시',
+    '【표제부】 (건물의 표시)',
+    '1 (전 1) 1984년7월11일 서울특별시 강남구 삼성동 철근콘크리트조 평슬래브지붕 3층 근린생활시설 1층 148.68㎡ 2층 148.68㎡ 3층 148.68㎡ 지하1층 148.68㎡ 옥탑 14.14㎡ 도면편철장 제2책제419장',
+    '【갑구】 (소유권에 관한 사항)',
+    '1 (전 1) 소유권보존 1984년7월11일 제25682호 소유자 홍길동 401010-******* 서울특별시 서초구 서초동 ○○아파트',
+    '【을구】 (소유권 이외의 권리에 관한 사항)',
+    '1 전세권설정 1990년12월12일 1990년12월8일 설정계약 전세금 220,000,000원정',
+    '* 실선으로 그어진 부분은 말소사항을 표시함.',
+  ].join('\n'),
+  clauses: [
+    '[특약사항]',
+    '1. 현 시설물 상태에서 임대차 한다.',
+    '2. 임대 할 부분의 면적은 공부상 면적이다.',
+    '3. 임차인은 애견으로 인한 옵션 및 주요시설물, 벽지, 도배 등 임의파손 시 원상회복 의무를 진다. 원상회복 미 이행시 보증금에서 사후 정산 후 지급한다. 단, 자체결함은 제외한다.',
+    '4. 임차인은 계약만기 2개월 전 까지 임대인에게 통보해야하며 서면 또는 유선으로 계약종료 의사표시가 없을 경우 동일한 조건으로 자동연장 되는 것으로 간주한다. 계약만료 전 퇴실 시 다음 입주자 입주 시 까지 관리비와 부동산 중개보수는 임차인이 전액 부담한다.',
+    '5. 옵션-침대, 에어컨, 티비, 쇼파, 책상, 의자, 냉장고, 전자레인지 등이며, 고의적인 파손시 배상하기로 한다.',
+    '6. 건물내부 흡연을 금지함.(흡연으로 인한 찌든때 등의 비용은 임차인이 부담한다)',
+    '7. 임차인은 계약체결일로 부터 30일 안에 전월세신고를 하여야 한다.',
+    '8. 임대인 계좌번호: ○○○',
+    '9. 기타사항은 민법 및 관례에 따르기로 한다.',
+    '10. 전기 051-123, 도시가스 1544-0009 (이사 1~2일 전에 미리 신청하기)',
+  ].join('\n'),
+};
 const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
 const AI_DISCLAIMER = '<p class="live-warn">AI 답은 틀릴 수 있고 법률 자문이 아니에요. 계약 전에는 원문과 공식 안내, 전문가에게 꼭 다시 확인하세요.</p>';
 
@@ -628,10 +655,10 @@ function renderLiveRegistry(out, data) {
     : '<p class="found">AI가 등기부 기록을 찾지 못했어요. 갑구·을구 부분을 다시 붙여 넣어 보세요.</p>'}
     <p class="live-signals"><b>글에서 바로 찾은 낱말</b> ${signals}<br><small>AI와 별개로 서비스가 직접 찾았어요. ‘말소’라고 적힌 줄은 뺐어요.</small></p>
     <div class="row2">
-      <div class="field"><label for="liveMax">선순위 채권최고액 합계 (만 원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
+      <div class="field"><label for="liveMax">선순위 채권최고액·전세금 합계 (만 원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
       <div class="field"><label for="livePrice">이 집 시세 (만 원)</label><input type="number" id="livePrice" min="0" step="500" placeholder="실거래가로 확인"></div>
     </div>
-    <p class="desc" style="margin:0">채권최고액은 글에서 숫자만 더한 값이에요. 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
+    <p class="desc" style="margin:0">근저당 채권최고액과 전세권 전세금을 글에서 찾아 숫자만 더한 값이에요. 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
     <div class="meter" id="liveMeter"></div>${AI_DISCLAIMER}`;
   const meter = () => { $('#liveMeter').innerHTML = meterHTML((Number($('#livePrice').value) || 0) * 1e4, (Number($('#liveMax').value) || 0) * 1e4); };
   $$('#liveMax, #livePrice').forEach((el) => el.addEventListener('input', meter));
@@ -690,6 +717,16 @@ $$('.ai-live').forEach((form) => {
   const update = () => { count.textContent = `${area.value.length.toLocaleString('ko-KR')} / ${max.toLocaleString('ko-KR')}자`; };
   area.addEventListener('input', update);
   update();
+  $('[data-example]', form).addEventListener('click', () => {
+    area.value = LIVE_EXAMPLES[form.dataset.live];
+    update();
+    area.focus();
+    area.setSelectionRange(0, 0);
+    area.scrollTop = 0;
+    const status = $('[data-status]', form);
+    status.textContent = '예시 글을 넣었어요. 고쳐 써도 되고, 그대로 AI에 보내 봐도 돼요.';
+    status.classList.remove('err');
+  });
   form.addEventListener('submit', (e) => { e.preventDefault(); runLive(form); });
 });
 
