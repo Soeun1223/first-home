@@ -429,6 +429,7 @@ function renderCompare() {
       <div class="empty">
         <strong>아직 비교할 매물이 없어요.</strong>
         위 ‘매물 추가’에서 보고 온 방의 이름과 보증금·월세를 입력하면 체크리스트가 만들어져요.
+        <div class="btn-row" style="margin-top:12px"><button type="button" class="btn" data-demo>매물 예시 불러오기</button></div>
       </div>`;
     return;
   }
@@ -496,7 +497,7 @@ function renderContractHome() {
     el.innerHTML = `
       <div class="notice notice-info">
         <p><strong>아직 고른 집이 없어요.</strong> ① 매물 비교의 매물 카드에서 ‘이 집으로 계약 준비’를 누르면 보증금·월세·관리비가 아래에 채워지고, 그 집의 필수 확인 결과가 여기에 보여요. 지금 아래 값은 예시예요.</p>
-        <div class="btn-row"><a class="btn" href="#/">매물 비교로 가기</a></div>
+        <div class="btn-row"><a class="btn" href="#/">매물 비교로 가기</a><button type="button" class="btn" data-demo>매물 예시 불러오기</button></div>
       </div>`;
     return;
   }
@@ -547,6 +548,40 @@ function prepareContract(listing) {
   if (window.zipkimiContract) window.zipkimiContract.fill(listing);
   location.hash = '#/contract';
   showToast('✓ 계약 준비에 이 집 금액을 채웠어요');
+}
+
+// 시연용 '매물 예시 불러오기': 체크리스트를 다 채운 가상 매물 하나를 만들고 바로 계약 준비로 넘깁니다.
+// 이미 있으면 새로 만들지 않고 그 매물로 넘어갑니다(지우면 다시 만들 수 있음).
+const DEMO_ID = 'demo-listing';
+const DEMO_LISTING = {
+  name: '예시 · 이문동 3층 남향',
+  deposit: 1000, rent: 50, fee: 7,
+  place: '이문동', school: 8, station: 5,
+  answers: {
+    // 1단계 필수: 모두 확인 완료 → 통과
+    'move-in-report': 'good', 'fixed-date': 'good', registry: 'good', 'owner-match': 'good', residential: 'good',
+    // 2단계 중요
+    pressure: 'good', drain: 'good', toilet: 'good', 'hot-water': 'okay', mold: 'good', sunlight: 'good',
+    ventilation: 'good', heating: 'good', noise: 'okay', entrance: 'good', 'door-lock': 'good', 'night-street': 'okay', bugs: 'good',
+    // 3단계 있으면 좋음
+    'drain-smell': 'good', draft: 'okay', 'street-noise': 'okay', 'window-guard': 'good', appliances: 'good',
+    outlets: 'okay', storage: 'bad', trash: 'good', 'fee-detail': 'okay',
+  },
+};
+function loadDemoListing() {
+  let listing = findListing(DEMO_ID);
+  if (!listing) {
+    if (state.listings.length >= MAX_LISTINGS) {
+      setAppStatus(`<div class="notice notice-warn"><p>매물은 최대 ${MAX_LISTINGS}개까지 저장할 수 있어요. 매물을 하나 지운 뒤 다시 눌러 주세요.</p></div>`);
+      return;
+    }
+    const now = Date.now();
+    listing = { id: DEMO_ID, ...DEMO_LISTING, answers: { ...DEMO_LISTING.answers }, createdAt: now, updatedAt: now };
+    state.listings.push(listing);
+    save();
+  }
+  prepareContract(listing);
+  showToast('✓ 예시 매물을 불러와 계약 준비에 채웠어요');
 }
 
 // 매물 카드와 상세 화면의 삭제 버튼이 함께 씁니다
@@ -755,6 +790,10 @@ function bindEvents() {
   window.addEventListener('hashchange', () => {
     setAppStatus('');
     route();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-demo]')) loadDemoListing();
   });
 
   $('#home-link').addEventListener('click', (e) => {
