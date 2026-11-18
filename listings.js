@@ -550,8 +550,8 @@ function prepareContract(listing) {
   showToast('✓ 계약 준비에 이 집 금액을 채웠어요');
 }
 
-// 시연용 '매물 예시 불러오기': 체크리스트를 다 채운 가상 매물 하나를 만들고 바로 계약 준비로 넘깁니다.
-// 이미 있으면 새로 만들지 않고 그 매물로 넘어갑니다(지우면 다시 만들 수 있음).
+// 시연용 '매물 예시 불러오기': 체크리스트를 다 채운 가상 매물 하나를 비교 목록에 넣습니다.
+// 계약 준비는 그 카드의 '이 집으로 계약 준비'로 시작해요. 이미 있으면 새로 만들지 않고 그 카드를 보여 줍니다.
 const DEMO_ID = 'demo-listing';
 const DEMO_LISTING = {
   name: '예시 · 이문동 3층 남향',
@@ -570,6 +570,7 @@ const DEMO_LISTING = {
 };
 function loadDemoListing() {
   let listing = findListing(DEMO_ID);
+  const existed = !!listing;
   if (!listing) {
     if (state.listings.length >= MAX_LISTINGS) {
       setAppStatus(`<div class="notice notice-warn"><p>매물은 최대 ${MAX_LISTINGS}개까지 저장할 수 있어요. 매물을 하나 지운 뒤 다시 눌러 주세요.</p></div>`);
@@ -580,8 +581,22 @@ function loadDemoListing() {
     state.listings.push(listing);
     save();
   }
-  prepareContract(listing);
-  showToast('✓ 예시 매물을 불러와 계약 준비에 채웠어요');
+  const showCard = () => {
+    setAppStatus(`<div class="notice notice-info"><p>${existed ? '예시 매물이 이미 목록에 있어요.' : '예시 매물을 불러왔어요.'} ‘${esc(listing.name)}’ 카드의 <strong>이 집으로 계약 준비</strong>를 누르면 ② 계약 준비가 시작돼요.</p></div>`);
+    const btn = document.querySelector(`#compare-body [data-prepare="${CSS.escape(DEMO_ID)}"]`);
+    if (btn) {
+      btn.closest('.listing-card').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      btn.focus({ preventScroll: true });
+    }
+  };
+  if (location.hash === '#/' || location.hash === '') {
+    route(); // 이미 비교 화면이면 hashchange가 없으니 직접 다시 그립니다
+    showCard();
+  } else {
+    location.hash = '#/';
+    setTimeout(showCard, 0); // hashchange가 안내를 지운 뒤에 띄웁니다
+  }
+  showToast(existed ? '예시 매물이 이미 있어요' : '✓ 예시 매물을 불러왔어요');
 }
 
 // 매물 카드와 상세 화면의 삭제 버튼이 함께 씁니다
