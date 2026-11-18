@@ -7,9 +7,52 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261118g">
+  <link rel="stylesheet" href="style.css?v=20261118j">
 </head>
 <body>
+  <!-- 첫 화면 안내 (intro.js) -->
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" aria-describedby="intro-sub" hidden>
+    <button type="button" class="intro-skip" id="intro-skip">건너뛰기</button>
+    <div class="intro-stage">
+      <svg class="intro-logo" viewBox="0 0 32 32" aria-hidden="true"><path pathLength="1" d="M14.6 3.5a2.2 2.2 0 0 1 2.8 0l11.1 9.3c.9.8.4 2.2-.8 2.2H26v11.3A2.7 2.7 0 0 1 23.3 29H19v-7.2a3 3 0 0 0-6 0V29H8.7A2.7 2.7 0 0 1 6 26.3V15H4.3c-1.2 0-1.7-1.4-.8-2.2z"/></svg>
+      <h2 class="intro-title" id="intro-title">집키미</h2>
+      <p class="intro-sub" id="intro-sub">처음 구하는 자취방, <b>고르는 날부터 입주 후 신고까지</b><br>무엇을 언제 해야 하는지 내 날짜로 알려 줘요.</p>
+
+      <ol class="intro-steps">
+        <li class="intro-step s1">
+          <div class="intro-art" aria-hidden="true">
+            <span class="row"><i class="tick"></i><i class="line"></i></span>
+            <span class="row"><i class="tick"></i><i class="line"></i></span>
+            <span class="row"><i class="tick"></i><i class="line short"></i></span>
+            <b class="grade">A</b>
+          </div>
+          <span class="intro-no">1</span><strong>매물 비교</strong>
+          <span>보고 온 집을 체크리스트로<br>판정·점수 매겨 비교</span>
+        </li>
+        <li class="intro-step s2">
+          <div class="intro-art" aria-hidden="true">
+            <span class="doc"><i></i><i></i><i class="hl"></i><i></i></span>
+            <span class="scan"></span>
+            <b class="ai">AI</b>
+          </div>
+          <span class="intro-no">2</span><strong>계약 준비</strong>
+          <span>등기부·특약 사진을<br>AI가 쉬운 말로 풀이</span>
+        </li>
+        <li class="intro-step s3">
+          <div class="intro-art" aria-hidden="true">
+            <span class="cal"><i class="top"></i><i class="d"></i><i class="d"></i><i class="d on"></i><i class="d"></i><i class="d"></i><i class="d"></i></span>
+            <span class="bell">🔔</span>
+          </div>
+          <span class="intro-no">3</span><strong>입주 후 관리</strong>
+          <span>신고·보증 마감을<br>내 캘린더로 알림</span>
+        </li>
+      </ol>
+
+      <button type="button" class="intro-start" id="intro-start">시작하기</button>
+      <p class="intro-note">매물 기록은 이 브라우저에만 저장돼요 · AI 답은 참고용이에요</p>
+    </div>
+  </div>
+
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
   <header class="site-header">
@@ -500,6 +543,7 @@
       <p id="data-info">체크리스트 정보를 불러오는 중…</p>
       <p>매물 기록과 계약 준비 내용은 이 브라우저(localStorage)에만 저장돼요. ‘이 계약 저장하고 링크 받기’를 누를 때만 계약 정보가 서버에 저장돼요.</p>
       <p>등기부·특약 AI 분석은 오픈하사 AI가 만든 답이라 틀릴 수 있어요. 법률 자문이 아니며, 제도와 기준은 바뀔 수 있어요. 실제 계약 전에는 출처의 공식 안내와 공인중개사·법률 전문가에게 확인하세요.</p>
+      <p><button type="button" class="link-btn" id="intro-replay">서비스 소개 다시 보기</button></p>
     </div>
   </footer>
 
@@ -508,5 +552,6 @@
 
   <script type="module" src="contract.js?v=20261118f"></script>
   <script type="module" src="listings.js?v=20261118i"></script>
+  <script type="module" src="intro.js?v=20261118j"></script>
 </body>
 </html>
