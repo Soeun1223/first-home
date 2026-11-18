@@ -7,7 +7,7 @@
 // 사진은 오픈하사 OCR 모델로 글자를 읽고, 글은 개인정보를 가린 뒤 gemma에 보냅니다. 저장하지 않습니다(lib/analyze.js).
 import { handleAnalyze } from '../lib/analyze.js';
 
-export const config = { maxDuration: 60 }; // 사진 글자 읽기(25초) + 해설(20초)
+export const config = { maxDuration: 60 }; // 사진 글자 읽기(25초) + 해설(30초)
 
 export default {
   fetch(request) {

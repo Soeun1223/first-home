@@ -468,14 +468,14 @@ const LIVE_EXAMPLES = {
 const MAX_PHOTO_CHARS = 3_900_000; // 서버 한도(4,000,000자)보다 조금 작게
 const PHOTO_EDGE = 2000; // 긴 변을 이 픽셀까지 줄여서 보냅니다
 const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
+const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험', info: '참고' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
 const AI_DISCLAIMER = '<p class="live-warn">AI 답은 틀릴 수 있고 법률 자문이 아니에요. 계약 전에는 원문과 공식 안내, 전문가에게 꼭 다시 확인하세요.</p>';
 
 function countChips(rows, kind) {
-  const n = { risk: 0, warn: 0, ok: 0 };
+  const n = { risk: 0, warn: 0, ok: 0, info: 0 };
   rows.forEach((r) => { n[r.level] += 1; });
   const L = LEVEL_LABEL[kind];
-  return ['risk', 'warn', 'ok'].filter((lv) => n[lv]).map((lv) => `<span class="chip ${lv}">${L[lv]} ${n[lv]}</span>`).join(' ');
+  return ['risk', 'warn', 'ok', 'info'].filter((lv) => n[lv]).map((lv) => `<span class="chip ${lv}">${L[lv]} ${n[lv]}</span>`).join(' ');
 }
 function renderLiveClauses(out, data) {
   const L = LEVEL_LABEL.clauses;
@@ -483,7 +483,7 @@ function renderLiveClauses(out, data) {
   out.innerHTML = `
     <p class="found">특약 ${data.items.length}개를 풀었어요 · ${countChips(data.items, 'clauses')}</p>
     <div class="clauses">${data.items.map((x) => `
-      <div class="clause"><div><span class="chip ${x.level}">${L[x.level]}</span></div>
+      <div class="clause"><div><span class="chip ${x.level}">${L[x.level]}</span>${x.no ? ` <span class="clause-no">${esc(x.no)}번</span>` : ''}</div>
         <q>${esc(x.quote)}</q><span>${esc(x.why)}</span>${x.fix ? `<span class="fix"><b>AI 제안</b> · ${esc(x.fix)}</span>` : ''}</div>`).join('')}
     </div>${AI_DISCLAIMER}`;
 }

@@ -50,8 +50,8 @@ test('정상: 특약 해설이 200과 위험도 목록으로 오고, 오픈하�
   assert.equal(call.body.model, MODEL);
   assert.equal(call.init.headers.Authorization, 'Bearer test-key-not-real');
   assert.equal(call.body.messages[0].role, 'system');
-  assert.equal(call.body.messages[1].role, 'user');
-  assert.ok(call.body.messages[1].content.includes('새로운 임차인'));
+  assert.equal(call.body.messages.at(-1).role, 'user');
+  assert.ok(call.body.messages.at(-1).content.includes('새로운 임차인'));
   assert.ok(!call.body.messages[0].content.includes('새로운 임차인'), '사용자 글이 지시문에 섞이지 않는다');
   assert.ok(call.body.max_tokens > 0);
   assert.ok(!JSON.stringify(body).includes('test-key-not-real'), '응답에 키가 없다');
@@ -71,7 +71,7 @@ test('정상: 등기부 분석은 AI 신호와 함께 서비스가 직접 찾은
 test('개인정보: 오픈하사로 가는 글에서 이름·주민번호·동호수가 가려진다', async () => {
   const hasa = fakeHasa(200, GOOD_REGISTRY);
   await handleAnalyze(post({ kind: 'registry', text: REGISTRY }), { fetchImpl: hasa, env: ENV });
-  const sent = hasa.calls[0].body.messages[1].content;
+  const sent = hasa.calls[0].body.messages.at(-1).content;
   assert.ok(!sent.includes('박철수'));
   assert.ok(!sent.includes('800101'));
   assert.ok(!sent.includes('1203호'));
@@ -192,7 +192,7 @@ test('사진: OCR 모델이 읽은 글을 개인정보를 가린 뒤 해설 모�
   assert.equal(ocr.messages[1].content[1].type, 'image_url');
   assert.equal(ocr.messages[1].content[1].image_url.url, PNG);
   assert.equal(explain.model, MODEL);
-  assert.ok(!explain.messages[1].content.includes('1234-5678'), '해설 모델에는 가린 글만 간다');
+  assert.ok(!explain.messages.at(-1).content.includes('1234-5678'), '해설 모델에는 가린 글만 간다');
 });
 
 test('사진: 첫 OCR 모델이 사진을 받지 않으면(400·404) 다음 모델로 다시 시도한다', async () => {
@@ -249,4 +249,24 @@ test('OCR 실수에도 버틴다: 채권최고액을 잘못 읽어도 금액을 
   assert.equal(sumMaxClaims('청구금액 금30,000,000원'), 0, '가압류 청구금액은 세지 않는다');
   const { text } = maskPersonal('소유자 김우리 600104-****** 근저당권자 이거레 750614-*******');
   assert.ok(!text.includes('600104') && !text.includes('750614'));
+});
+
+test('지시문 v2: 예시 대화(few-shot)가 들어가고, 예시 답은 우리 형식 검사를 통과한다', () => {
+  for (const kind of ['clauses', 'registry']) {
+    const msgs = buildMessages(kind, '실제 글');
+    assert.deepEqual(msgs.map((m) => m.role), ['system', 'user', 'assistant', 'user']);
+    assert.ok(msgs.at(-1).content.includes('실제 글'));
+    const rows = parseAnswer(kind, msgs[2].content);
+    assert.ok(rows && rows.length >= 4, `${kind} 예시 답이 형식에 맞아야 한다`);
+  }
+  const system = buildMessages('clauses', 'x')[0].content;
+  assert.match(system, /빠짐없이/);
+  assert.match(system, /판단 기준/);
+});
+
+test('지시문 v2: 특약에 참고(info) 등급과 조항 번호를 받고, 등기부에는 참고 등급을 받지 않는다', () => {
+  const rows = parseAnswer('clauses', JSON.stringify({ items: [{ no: '2', level: 'info', quote: '면적은 공부상 면적이다.', why: '안내예요.', fix: '' }] }));
+  assert.equal(rows[0].level, 'info');
+  assert.equal(rows[0].no, '2');
+  assert.equal(parseAnswer('registry', JSON.stringify({ flags: [{ level: 'info', title: 'x', detail: 'y' }] })), null);
 });
