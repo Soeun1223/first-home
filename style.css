@@ -456,8 +456,8 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 .cv .tl-item:first-child::before { top: 22px; }
 .cv .tl-item:last-child::before { bottom: calc(100% - 22px); }
 .cv .tl-item::after { content: ""; position: absolute; left: 0; top: 18px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink); }
-.cv .tl-item.key::after { background: var(--ink); }
-.cv .tl-item.past::after { border-color: var(--line); }
+/* 동그라미: 모두 흰색, 지난 일정만 연하게 */
+.cv .tl-item.past::after { border-color: var(--muted); opacity: 0.4; }
 .cv .tl-date { display: grid; gap: 2px; align-content: start; }
 .cv .tl-date .d1 { font-size: var(--fs-body-s); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cv .tl-date .dday { font-size: var(--fs-caption); color: var(--muted); font-weight: 600; }
@@ -920,6 +920,7 @@ body.intro-open { overflow: hidden; }
 .cv .tl-filter { background: var(--surface-2); padding: 4px; border-radius: 999px; gap: 4px; flex-wrap: nowrap; }
 .cv .tl-filter button { background: transparent; min-height: 36px; }
 .cv .tl-filter button[aria-pressed="true"] { background: var(--ink); color: var(--ink-text); }
-.cv .chip.key-chip { background: var(--ink); color: var(--ink-text); }
+/* 주요 일정: 제목을 빨간색으로 */
+.cv .tl-item.key .tl-title { color: var(--red); }
 .cv .timeline.key-only .tl-item:not(.key) { display: none; }
 .cv sup.src a { color: var(--muted); }

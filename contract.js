@@ -174,7 +174,7 @@ function renderTimeline() {
   $('#timeline').innerHTML = events().map((e) => `
     <li class="tl-item${e.d < t0 ? ' past' : ''}${e.key ? ' key' : ''}">
       <div class="tl-date"><span class="d1">${D(e.d)}</span>${e.step === 1 && e.d < info.c && e.d >= t0 ? '<span class="chip info">계약 전</span>' : ddayChip(e.d)}</div>
-      <div class="tl-body"><h3><button type="button" class="tl-step" data-goto="step${e.step}" aria-label="${e.step}단계 할 일 보기">${e.step}단계</button>${e.title}${e.key ? ' <span class="chip key-chip">주요</span>' : ''}${extra(e)}</h3><p>${e.body}${S(e.s)}</p></div>
+      <div class="tl-body"><h3><button type="button" class="tl-step" data-goto="step${e.step}" aria-label="${e.step}단계 할 일 보기">${e.step}단계</button><span class="tl-title">${e.title}</span>${extra(e)}</h3><p>${e.body}${S(e.s)}</p></div>
     </li>`).join('');
   $('#todayLabel').textContent = `오늘 ${D(t0)} 기준`;
 }
@@ -761,10 +761,5 @@ renderAll();
 let hasChosen = false;
 try { hasChosen = !!localStorage.getItem('zipkimi:chosen'); } catch { /* 저장이 막힌 브라우저 */ }
 if (startCode || userEdited || hasChosen) $('#formFold').open = false;
-{
-  const next = events().find((e) => e.task && e.d >= today());
-  const open = $(`#step${next ? next.step : 1}`);
-  if (open) open.open = true;
-}
 loadTerms();
 if (startCode) loadPlan(startCode);
