@@ -482,11 +482,11 @@ function renderCompare() {
 
 // 매물 체크리스트의 필수 항목이 계약 준비의 어느 단계와 이어지는지
 const ESSENTIAL_STEP = {
-  'move-in-report': 'STEP 3 전입신고',
-  'fixed-date': 'STEP 2 확정일자·임대차 신고',
-  registry: 'STEP 1 등기부등본 확인',
-  'owner-match': 'STEP 2 임대인·소유자 확인',
-  residential: 'STEP 1 건축물대장 확인',
+  'move-in-report': '3단계 전입신고',
+  'fixed-date': '2단계 확정일자·임대차 신고',
+  registry: '1단계 등기부등본 확인',
+  'owner-match': '2단계 임대인·소유자 확인',
+  residential: '1단계 건축물대장 확인',
 };
 
 function renderContractHome() {
@@ -527,17 +527,17 @@ function renderContractHome() {
       </div>
       <div class="lc-tags">
         <span class="verdict-pill v-${s.verdict}">${VERDICTS[s.verdict].label}</span>
-        <span class="note">체크리스트 ${s.score}점 · 보증금 ${formatMan(listing.deposit)} · 월세 ${formatMan(listing.rent)}${listing.fee ? ` · 관리비 ${formatMan(listing.fee)}` : ''}</span>
+        <span class="note">체크리스트 ${s.score}점</span>
       </div>
       ${warn}
       <div>
         <p class="help" style="margin:0 0 8px">매물 체크리스트의 필수 확인 결과</p>
         <ul class="ess">${rows}</ul>
       </div>
-      <div class="btn-row">
-        <button type="button" class="btn" data-refill>이 집 금액으로 다시 채우기</button>
-        <a class="btn ghost" href="#/listing/${encodeURIComponent(listing.id)}">매물 체크리스트 열기</a>
-        <a class="btn ghost" href="#/">다른 집 고르기</a>
+      <div class="btn-row home-actions">
+        <a class="link" href="#/listing/${encodeURIComponent(listing.id)}">매물 체크리스트 열기</a>
+        <a class="link" href="#/">다른 집 고르기</a>
+        <button type="button" class="link" data-refill>이 집 금액으로 다시 채우기</button>
       </div>
     </section>`;
 }

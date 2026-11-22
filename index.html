@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261122c">
+  <link rel="stylesheet" href="style.css?v=20261122e">
 </head>
 <body>
   <!-- 첫 화면 안내 (intro.js) -->
@@ -230,15 +230,16 @@
     <div id="contract-view" class="cv" hidden>
       <div class="cv-intro">
         <h2 id="contract-title" tabindex="-1">계약 준비</h2>
-        <p class="help">계약일과 입주일을 넣으면 해야 할 일을 날짜순으로 정리해요. 밑줄 친 용어를 누르면 뜻과 함께 <b>내 계약에서는 무슨 뜻인지</b> 펼쳐져요.</p>
+        <p class="help">계약일과 입주일을 넣으면 해야 할 일을 날짜순으로 정리해요. 밑줄 친 용어를 누르면 뜻과 함께 <b>내 계약에서는 무슨 뜻인지</b> 펼쳐져요. <button type="button" class="link" id="srcToggle" aria-pressed="false">출처 번호 보기</button></p>
       </div>
       <div id="contract-home"></div>
 
       <div class="layout" id="contractLayout">
         <!-- 내 계약 정보 -->
+        <div class="cv-side">
         <aside class="panel form-panel" aria-labelledby="form-h">
           <details class="fold form-fold" id="formFold" open>
-          <summary><div class="form-fold-h"><span class="eyebrow">My Contract</span><h2 id="form-h">내 계약 정보 <span class="ex-badge">예시</span></h2><span class="fold-summary" id="formSummary"></span></div><span class="fold-edit" aria-hidden="true">수정</span><span class="fold-icon" aria-hidden="true"></span></summary>
+          <summary><div class="form-fold-h"><h2 id="form-h">내 계약 정보 <span class="ex-badge">예시</span></h2><span class="fold-summary" id="formSummary"></span></div><span class="fold-edit" aria-hidden="true">수정</span><span class="fold-icon" aria-hidden="true"></span></summary>
           <div class="form-fields">
           <div class="field">
             <span id="type-l" class="field-l">계약 유형</span>
@@ -290,29 +291,37 @@
             </div>
           </div>
         </aside>
+        </div>
 
-        <!-- 요약 + 타임라인 -->
+        <!-- 지금 해야 할 일 -->
         <div class="cv-main">
           <div class="verdicts" id="verdicts"></div>
-          <section class="panel" aria-labelledby="tl-h">
-            <div class="section-h">
-              <div><span class="eyebrow">Timeline</span><h2 id="tl-h">내 계약 타임라인 <span class="ex-badge">예시</span></h2></div>
-              <small id="todayLabel"></small>
-            </div>
-            <ol class="timeline" id="timeline"></ol>
-          </section>
         </div>
       </div>
+
+      <!-- 타임라인: 전체 너비, '주요 일정만' 거르기 -->
+      <section class="panel tl-panel" aria-labelledby="tl-h">
+        <div class="section-h">
+          <div><h2 id="tl-h">내 계약 타임라인 <span class="ex-badge">예시</span></h2><small id="todayLabel"></small></div>
+          <div class="tabs tl-filter" role="group" aria-label="타임라인 보기">
+            <button type="button" data-tl-filter="all" aria-pressed="true">전체</button>
+            <button type="button" data-tl-filter="key" aria-pressed="false">주요 일정만</button>
+          </div>
+        </div>
+        <ol class="timeline" id="timeline"></ol>
+      </section>
 
       <div class="steps">
 
         <!-- STEP 1 -->
-        <section class="step" id="step1" aria-labelledby="s1-h">
-          <div class="step-h">
-            <span class="step-no">STEP 01 · PREPARE</span>
+        <details class="step" id="step1">
+          <summary class="step-h">
+            <span class="step-no">1단계</span>
             <h2 id="s1-h">집 알아보기 및 계약 준비</h2>
             <span class="when">계약 전 · <span class="progress" data-progress="s1"></span></span>
-          </div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="step-body">
           <ul class="checks">
             <li data-id="s1-budget">
               <input type="checkbox" id="c-s1-budget" aria-labelledby="l-s1-budget">
@@ -382,15 +391,18 @@
               </div>
             </li>
           </ul>
-        </section>
+          </div>
+        </details>
 
         <!-- STEP 2 -->
-        <section class="step" id="step2" aria-labelledby="s2-h">
-          <div class="step-h">
-            <span class="step-no">STEP 02 · CONTRACT</span>
+        <details class="step" id="step2">
+          <summary class="step-h">
+            <span class="step-no">2단계</span>
             <h2 id="s2-h">계약서 작성 및 검토</h2>
             <span class="when">계약 당일 전후 · <span class="progress" data-progress="s2"></span></span>
-          </div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="step-body">
           <ul class="checks">
             <li data-id="s2-owner">
               <input type="checkbox" id="c-s2-owner" aria-labelledby="l-s2-owner">
@@ -448,15 +460,18 @@
               </div>
             </li>
           </ul>
-        </section>
+          </div>
+        </details>
 
         <!-- STEP 3 -->
-        <section class="step" id="step3" aria-labelledby="s3-h">
-          <div class="step-h">
-            <span class="step-no">STEP 03 · MOVE-IN</span>
+        <details class="step" id="step3">
+          <summary class="step-h">
+            <span class="step-no">3단계</span>
             <h2 id="s3-h">잔금 지급 및 입주</h2>
             <span class="when">잔금일·입주일 · <span class="progress" data-progress="s3"></span></span>
-          </div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="step-body">
           <ul class="checks">
             <li data-id="s3-recheck">
               <input type="checkbox" id="c-s3-recheck" aria-labelledby="l-s3-recheck">
@@ -488,15 +503,18 @@
               </div>
             </li>
           </ul>
-        </section>
+          </div>
+        </details>
 
         <!-- STEP 4 -->
-        <section class="step" id="step4" aria-labelledby="s4-h">
-          <div class="step-h">
-            <span class="step-no">STEP 04 · AFTERCARE</span>
+        <details class="step" id="step4">
+          <summary class="step-h">
+            <span class="step-no">4단계</span>
             <h2 id="s4-h">입주 후 관리</h2>
             <span class="when">입주 후 · <span class="progress" data-progress="s4"></span></span>
-          </div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="step-body">
           <ul class="checks">
             <li data-id="s4-protect">
               <input type="checkbox" id="c-s4-protect" aria-labelledby="l-s4-protect">
@@ -521,25 +539,26 @@
               </div>
             </li>
           </ul>
-        </section>
+          </div>
+        </details>
 
         <!-- 용어집 -->
-        <section class="panel" aria-labelledby="g-h">
-          <div class="section-h">
-            <div><span class="eyebrow">Glossary</span><h2 id="g-h">용어집</h2></div>
-            <small id="termSource">불러오는 중…</small>
-          </div>
+        <details class="panel fold-panel" id="glossaryFold">
+          <summary class="section-h">
+            <div><h2 id="g-h">용어집</h2><small id="termSource">불러오는 중…</small></div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
           <div class="glossary" id="glossary"></div>
-        </section>
+        </details>
 
         <!-- 출처 -->
-        <section class="panel" aria-labelledby="src-h">
-          <div class="section-h">
-            <div><span class="eyebrow">Sources</span><h2 id="src-h">출처</h2></div>
-            <small>2026년 11월에 확인한 공공기관·법령 자료</small>
-          </div>
+        <details class="panel fold-panel" id="sourcesFold">
+          <summary class="section-h">
+            <div><h2 id="src-h">출처</h2><small>2026년 11월에 확인한 공공기관·법령 자료</small></div>
+            <span class="fold-icon" aria-hidden="true"></span>
+          </summary>
           <ol class="sources" id="sources"></ol>
-        </section>
+        </details>
       </div>
     </div>
   </main>
@@ -556,8 +575,8 @@
   <!-- 저장 알림: 잠깐 떴다가 사라진다 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="contract.js?v=20261122c"></script>
-  <script type="module" src="listings.js?v=20261122c"></script>
+  <script type="module" src="contract.js?v=20261122e"></script>
+  <script type="module" src="listings.js?v=20261122e"></script>
   <script type="module" src="intro.js?v=20261122a"></script>
 </body>
 </html>
