@@ -331,7 +331,6 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 /* 상세 화면 배치: 기본은 한 줄(휴대전화·태블릿) — 기본 정보(접힘) → 체크리스트 → 위치 */
 .detail-layout { display: flex; flex-direction: column; }
 .detail-side { display: contents; }
-#info-card { order: 0; }
 .detail-main { order: 1; }
 #prepare-card { order: 2; }
 .side-score { display: none; }
@@ -759,9 +758,9 @@ body.intro-open { overflow: hidden; }
 .intro-title { margin: 0; font-size: clamp(2.2rem, 7vw, 3.4rem); font-weight: 800; letter-spacing: -0.04em; }
 .intro-sub { margin: 0; color: var(--i-muted); font-size: clamp(0.98rem, 2.6vw, 1.12rem); line-height: 1.6; }
 .intro-sub b { color: var(--i-text); }
-.intro-steps { list-style: none; padding: 0; margin: 18px 0 6px; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; position: relative; }
+.intro-steps { list-style: none; padding: 0; margin: 18px 0 6px; width: min(600px, 100%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; position: relative; }
 .intro-steps::before { /* 세 단계를 잇는 선 */
-  content: ""; position: absolute; top: 56px; left: 16%; right: 16%; height: 2px; background: var(--i-line); transform-origin: left center;
+  content: ""; position: absolute; top: 56px; left: 25%; right: 25%; height: 2px; background: var(--i-line); transform-origin: left center;
 }
 .intro-step {
   position: relative; background: var(--i-card); border: 1px solid var(--i-line); border-radius: 20px; padding: 16px 14px 18px;
@@ -904,7 +903,7 @@ body.intro-open { overflow: hidden; }
 
 /* 출처 번호는 기본으로 숨기고 '출처 번호 보기'로 켜요. 용어 버튼의 ? 표시도 뺌(점선 밑줄로 충분) */
 .cv sup.src { display: none; }
-.cv.show-src sup.src { display: inline; }
+body.show-src .cv sup.src { display: inline; }
 .cv .t::after { content: none; }
 
 /* 버튼: 묶음마다 주인공 하나(검정), 나머지는 흰 버튼이나 글자 링크 */
@@ -935,3 +934,50 @@ body.intro-open { overflow: hidden; }
 
 /* 고른 집 카드: 판정·점수·필수 항목 상태를 같은 글씨 크기로 */
 .home-card .verdict-pill, .home-card .note, .home-card .ess-status { font-size: var(--fs-body-s); }
+
+
+/* ───────── 구조 재정리(redesign): 매물 비교 중심 ───────── */
+/* 라벨 형식: "이름 (단위)" + 선택 입력만 '선택' 표시 */
+.opt { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: var(--fs-caption); font-weight: 600; vertical-align: 1px; }
+.store-note { margin: 16px 0 0; color: var(--muted); font-size: var(--fs-small); }
+#info-card h3 { margin-bottom: 4px; }
+#info-card .help { margin-bottom: 0; }
+@media (min-width: 1024px) {
+  .detail-main .field-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 계약 정보: 매물에서 가져온 금액(입력칸 아님) */
+.cv .amounts { margin: 0; padding: 12px 14px; border-radius: var(--r-m); background: var(--surface-2); font-size: var(--fs-body-s); line-height: 1.6; }
+.cv .amounts b { font-weight: 700; }
+.cv .amounts small { color: var(--muted); font-size: var(--fs-small); }
+.cv .amounts .link { font-size: var(--fs-small); }
+.cv .server-note { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+
+/* 일정 알림 받기 */
+.cv .alarm-panel { display: grid; gap: 10px; margin-bottom: 22px; }
+.cv .alarm-panel h2 { font-size: var(--fs-title-s); font-weight: 800; }
+.cv .alarm-panel .cal { margin-top: 0; }
+.cv .alarm-panel .link { font-size: inherit; }
+
+/* 계약 전 확인 도구(AI) */
+.cv .tools-panel { display: grid; gap: 12px; margin-bottom: 40px; }
+.cv .tools-panel .section-h { margin-bottom: 0; }
+.cv .tools-notice { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--r-m); background: var(--amber-soft); color: var(--text); font-size: var(--fs-small); }
+.cv .tools-notice p { margin: 0; }
+.cv details.tool { border-radius: var(--r-m); background: var(--surface-2); }
+.cv details.tool > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; min-height: 56px; }
+.cv details.tool > summary::-webkit-details-marker { display: none; }
+.cv details.tool .tool-h { display: grid; gap: 2px; }
+.cv details.tool .tool-h b { font-size: var(--fs-body); }
+.cv details.tool .tool-h small { color: var(--muted); font-size: var(--fs-small); }
+.cv details.tool[open] .fold-icon::after { transform: translate(-50%, -50%) rotate(0deg); }
+.cv details.tool .ai-body { padding: 0 16px 16px; }
+.cv details.tool .btn.ghost { background: var(--surface); }
+.cv .checks .extra .link { font-size: var(--fs-body-s); }
+
+/* 용어집·출처: 페이지 맨 아래 */
+.ref-area { display: grid; gap: 16px; padding-top: 8px; }
+.ref-area .panel { scroll-margin-top: 16px; }
+.cv .sources li.hit { background: var(--amber-soft); color: var(--text); border-radius: var(--r-s); }
+.foot-links { font-size: var(--fs-body-s); }
+.foot-links .link-btn { font-weight: 600; }

@@ -42,14 +42,52 @@ function dday(d) {
   const diff = Math.round((d - today()) / DAY);
   return diff === 0 ? 'D-DAY' : diff > 0 ? `D-${diff}` : `D+${-diff}`;
 }
+// 원 → "1억 5,000만원" (단위는 만원으로 통일)
 function won(v) {
   if (!v) return '0원';
   const eok = Math.floor(v / 1e8), man = Math.round((v % 1e8) / 1e4);
-  return [eok ? `${eok}억` : '', man ? `${man.toLocaleString('ko-KR')}만` : ''].filter(Boolean).join(' ') + ' 원';
+  if (!man) return `${eok}억원`;
+  return `${eok ? `${eok}억 ` : ''}${man.toLocaleString('ko-KR')}만원`;
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const T = (key, label) => `<button type="button" class="t" data-t="${key}">${label}</button>`;
 const S = (ids) => `<sup class="src">${String(ids).split(',').map((i) => `<a href="#src-${i}" title="${esc(SOURCES[i][0] + ' · ' + SOURCES[i][1])}">${i}</a>`).join('')}</sup>`;
+
+/* ───────── 금액: 매물이 값을 갖고, 계약은 고른 매물(zipkimi:chosen)을 가리킵니다 ─────────
+   보증금·월세·관리비는 매물에만 저장하고 여기서는 다시 입력받지 않아요(만원 단위).
+   고른 매물이 없을 때만 저장 링크의 금액이나 예전 임시 저장 금액, 그것도 없으면 예시 금액을 써요. */
+const EXAMPLE_AMOUNTS = { deposit: 5000, rent: 55, fee: 8 };
+let amounts = { ...EXAMPLE_AMOUNTS, source: 'example', id: null, name: '' };
+function amountsFromListing(l) {
+  return { deposit: l.deposit, rent: l.rent, fee: l.fee || 0, source: 'listing', id: l.id, name: l.name };
+}
+// 매물 목록(listings.js)이 뜨기 전에도 고른 집 금액을 바로 보이도록 저장소를 직접 읽어요
+function chosenFromStorage() {
+  try {
+    const id = localStorage.getItem('zipkimi:chosen');
+    if (!id) return null;
+    const data = JSON.parse(localStorage.getItem('zipkimi:listings:v1') || 'null');
+    const l = data?.listings?.find((x) => x && x.id === id);
+    return l && Number.isInteger(l.deposit) && Number.isInteger(l.rent) ? l : null;
+  } catch {
+    return null;
+  }
+}
+const manText = (v) => (v >= 10000 ? won(v * 1e4) : `${v.toLocaleString('ko-KR')}만원`);
+function renderAmounts() {
+  const jeonse = $('#type-jeonse').checked;
+  const a = amounts;
+  const parts = [`보증금 <b>${manText(a.deposit)}</b>`];
+  parts.push(jeonse ? '월세 없음(전세)' : `월세 <b>${manText(a.rent)}</b>`);
+  parts.push(`관리비 ${a.fee ? manText(a.fee) : '없음'}`);
+  const from = a.source === 'listing'
+    ? `‘${esc(a.name)}’ 매물 정보예요 · <a class="link" href="#/listing/${encodeURIComponent(a.id)}">매물에서 고치기</a>`
+    : a.source === 'example'
+      ? '예시 금액이에요 · 매물을 고르면 그 집 금액으로 바뀌어요'
+      : '저장해 둔 계약의 금액이에요 · 매물을 고르면 그 집 금액으로 바뀌어요';
+  const warn = jeonse && a.rent > 0 ? '<br><small>이 매물은 월세가 있어요. 전세로 두면 월세는 빼고 계산해요.</small>' : '';
+  $('#amounts').innerHTML = `${parts.join(' · ')}<br><small>${from}</small>${warn}`;
+}
 
 /* ───────── 상태 ───────── */
 const REGION_NAME = { metro: '수도권', city: '광역시·세종·도의 시', county: '도의 군 지역' };
@@ -61,8 +99,8 @@ function readState() {
   return {
     type: $('#type-jeonse').checked ? 'jeonse' : 'wolse',
     contractDate: cd, moveDate: md,
-    deposit: Math.round(num('#deposit') * 1e4),
-    rent: $('#type-jeonse').checked ? 0 : Math.round(num('#rent') * 1e4),
+    deposit: Math.round(amounts.deposit * 1e4),
+    rent: $('#type-jeonse').checked ? 0 : Math.round(amounts.rent * 1e4),
     termMonths: Number($('#termMonths').value) || 24,
     salary: $('#salary').value === '' ? null : Math.round(num('#salary') * 1e4),
     region: $('#region').value,
@@ -86,20 +124,20 @@ function derive(s) {
 function taxInfo(s) {
   if (s.type !== 'wolse' || !s.rent) return { ok: false, text: '월세가 없는 전세 계약이라 해당되지 않아요.' };
   const yearly = Math.min(s.rent * 12, 1e7);
-  if (s.salary === null) return { ok: null, text: `연 총급여를 넣으면 공제율을 계산해요. 연 월세 ${won(s.rent * 12)} 중 1,000만 원까지 공제 대상이에요.` };
-  if (s.salary > 8e7) return { ok: false, text: `총급여 ${won(s.salary)}는 8천만 원을 넘어서 공제 대상이 아니에요.` };
+  if (s.salary === null) return { ok: null, text: `연 총급여를 넣으면 공제율을 계산해요. 연 월세 ${won(s.rent * 12)} 중 1,000만원까지 공제 대상이에요.` };
+  if (s.salary > 8e7) return { ok: false, text: `총급여 ${won(s.salary)}는 8천만원을 넘어서 공제 대상이 아니에요.` };
   const rate = s.salary <= 5.5e7 ? 0.17 : 0.15;
   return { ok: true, rate, amount: Math.floor(yearly * rate),
-    text: `총급여 ${won(s.salary)} → 공제율 ${Math.round(rate * 100)}%. 1년 월세 ${won(s.rent * 12)} 기준 최대 약 ${won(Math.floor(yearly * rate))}를 돌려받을 수 있어요(무주택 세대주, 85㎡ 이하 또는 기준시가 4억 원 이하, 계약서 주소 = 주민등록 주소일 때).` };
+    text: `총급여 ${won(s.salary)} → 공제율 ${Math.round(rate * 100)}%. 1년 월세 ${won(s.rent * 12)} 기준 최대 약 ${won(Math.floor(yearly * rate))}를 돌려받을 수 있어요(무주택 세대주, 85㎡ 이하 또는 기준시가 4억원 이하, 계약서 주소 = 주민등록 주소일 때).` };
 }
 
 /* ───────── 용어: 내 계약에서는? ───────── */
 const MINE = {
   deunggi: (s, d) => `계약일 ${D(d.c)} 당일, 그리고 잔금일 ${D(d.m)} 잔금 직전에 한 번 더 새로 떼서 보세요. 계약하고 잔금 사이에 대출이 새로 잡힐 수 있어요.`,
   gapgu: () => '갑구 맨 아래 소유자 이름이 계약서에 쓸 집주인 이름·신분증과 같은지, 신탁·가압류 기록이 없는지 확인하세요.',
-  eulgu: (s) => `을구에 근저당이 있다면 채권최고액과 내 보증금 ${won(s.deposit)}을 더한 금액이 시세보다 충분히 낮은지 봐야 해요. 1단계의 AI 등기부 분석에 사진이나 글을 넣으면 계산해 줘요.`,
+  eulgu: (s) => `을구에 근저당이 있다면 채권최고액과 내 보증금 ${won(s.deposit)}을 더한 금액이 시세보다 충분히 낮은지 봐야 해요. 아래 ‘계약 전 확인 도구’의 AI 등기부 분석에 사진이나 글을 넣으면 계산해 줘요.`,
   geunjeodang: (s, d) => `내 대항력은 ${D(d.daehang)} 0시에 생겨요. 그보다 먼저 설정된 근저당은 경매 때 나보다 먼저 돈을 가져가요.`,
-  chaegwon: (s) => `예를 들어 채권최고액이 1억 5,600만 원이면, 경매 비용을 빼고도 집이 ${won(1.56e8 + s.deposit)} 넘게 팔려야 내 보증금 ${won(s.deposit)}을 다 돌려받을 수 있어요.`,
+  chaegwon: (s) => `예를 들어 채권최고액이 1억 5,600만원이면, 경매 비용을 빼고도 집이 ${won(1.56e8 + s.deposit)} 넘게 팔려야 내 보증금 ${won(s.deposit)}을 다 돌려받을 수 있어요.`,
   seonsunwi: (s, d) => `계약일 ${D(d.c)}에 집주인에게 확정일자 부여 현황을 보여 달라고 하면, 나보다 먼저 들어온 세입자의 보증금 합계를 알 수 있어요. 다가구 주택이라면 특히 중요해요.`,
   sintak: () => '갑구에 "신탁"이 보이면 신탁회사가 임대에 동의했는지 확인하기 전에는 계약금을 보내지 마세요. 동의 없이 맺은 계약은 효력이 제한돼요.',
   gaapryu: () => '계약 전 갑구에 이런 기록이 있으면 계약을 다시 생각하세요. 이런 권리가 있으면 HUG 반환보증 가입도 어려워요.',
@@ -107,13 +145,13 @@ const MINE = {
   wiban: () => '위반건축물이면 대출이나 보증 심사에서 거절될 수 있어요. 계약 전에 꼭 확인하세요.',
   jeonsega: (s) => s.deposit ? `내 보증금 ${won(s.deposit)}이 시세의 70%를 넘지 않으려면 시세가 ${won(Math.ceil(s.deposit / 0.7 / 1e6) * 1e6)} 이상이어야 해요.` : '보증금을 넣으면 계산해 줘요.',
   imdaein: (s, d) => `계약일 ${D(d.c)}에 집주인에게 확정일자 부여 현황과 국세·지방세 납세증명서를 요청하세요. 법에 있는 의무라 요청해도 실례가 아니에요.`,
-  teukyak: () => '2단계에서 계약서 특약 사진이나 글을 넣으면 AI가 특약사항을 찾아 위험·주의·권장으로 나눠 쉬운 말로 풀어 줘요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
+  teukyak: () => '아래 ‘계약 전 확인 도구’의 AI 특약 해설에 계약서 특약 사진이나 글을 넣으면 AI가 특약사항을 찾아 위험·주의·권장으로 나눠 쉬운 말로 풀어 줘요. 특히 "잔금일 다음 날까지 담보권 설정 금지" 특약은 꼭 넣는 걸 권해요.',
   hwakjeong: (s, d) => d.singoTarget
     ? `내 계약은 임대차 신고 대상이에요. ${D(d.singoDue)}까지 계약서를 첨부해 신고하면 확정일자가 자동으로 붙어요.`
     : `내 계약은 임대차 신고 대상이 아니라서 확정일자를 따로 받아야 해요. ${D(d.m)} 전입신고할 때 주민센터에서 함께 받으면 돼요.`,
   singo: (s, d) => d.singoTarget
     ? `${REGION_NAME[s.region]}, 보증금 ${won(s.deposit)}${s.rent ? ` · 월세 ${won(s.rent)}` : ''} → 신고 대상이에요. 마감은 ${D(d.singoDue)} (${dday(d.singoDue)})예요.`
-    : s.region === 'county' ? '도의 군 지역은 신고 대상이 아니에요.' : `보증금 6천만 원·월세 30만 원 이하라서 신고 대상이 아니에요.`,
+    : s.region === 'county' ? '도의 군 지역은 신고 대상이 아니에요.' : `보증금 6천만원·월세 30만원 이하라서 신고 대상이 아니에요.`,
   jeonip: (s, d) => `${D(d.m)}에 이사하면 법정 기한은 ${D(d.jeonipDue)}이지만, 대항력 때문에 이사 당일 하는 게 좋아요. 평일 18시 이후나 주말에 온라인으로 하면 다음 근무일에 처리돼요.`,
   daehang: (s, d) => `${D(d.m)}에 입주·전입신고를 하면 대항력은 ${D(d.daehang)} 0시부터 생겨요. 그 사이에 집주인이 새로 대출을 받으면 그 근저당이 나보다 앞서요. 특약으로 막아 두세요.`,
   usun: (s, d) => `대항력(${D(d.daehang)} 0시)과 확정일자를 모두 갖추면 생겨요. 둘 중 늦은 날이 내 순위 기준이 돼요.`,
@@ -182,7 +220,7 @@ function renderTimeline() {
 // 내 계약 정보 접었을 때 보이는 한 줄 요약
 function renderFormSummary() {
   const md = parseDate(state.moveDate);
-  const money = state.type === 'jeonse' ? `전세 ${won(state.deposit)}` : `월세 ${(state.deposit / 1e4).toLocaleString('ko-KR')}/${state.rent / 1e4}`;
+  const money = state.type === 'jeonse' ? `전세 ${won(state.deposit)}` : `월세 ${(state.deposit / 1e4).toLocaleString('ko-KR')}/${state.rent / 1e4}만원`;
   $('#formSummary').textContent = `${money} · 입주 ${md.getMonth() + 1}.${md.getDate()} · ${state.termMonths / 12}년`;
 }
 
@@ -190,20 +228,20 @@ function renderFormSummary() {
 let chosenListing = false, userEdited = false;
 function syncExample() {
   const ex = !chosenListing && !planCode && !userEdited;
-  $('#contractLayout').classList.toggle('is-example', ex);
+  $('#contract-view').classList.toggle('is-example', ex);
 }
 
 function renderStepTexts() {
   const tax = taxInfo(state);
   $('#reportDesc').innerHTML = info.singoTarget
     ? `${REGION_NAME[state.region]}, 보증금 ${won(state.deposit)}${state.rent ? `·월세 ${won(state.rent)}` : ''} → <b>신고 대상</b>이에요. ${D(info.singoDue)}까지 부동산거래관리시스템이나 주민센터에서 신고하면 확정일자도 함께 받아요. 계약서를 내면 한 사람만 신고해도 돼요.${S('3,4,5')}`
-    : `<b>신고 대상이 아니에요</b>(${state.region === 'county' ? '도의 군 지역' : '보증금 6천만 원·월세 30만 원 이하'}). 대신 확정일자는 꼭 따로 받아요.${S('3,2')}`;
+    : `<b>신고 대상이 아니에요</b>(${state.region === 'county' ? '도의 군 지역' : '보증금 6천만원·월세 30만원 이하'}). 대신 확정일자는 꼭 따로 받아요.${S('3,2')}`;
   $('#jeonipDesc').innerHTML = `${D(info.m)} 이사 당일 정부24나 주민센터에서 해요(법정 기한 ${D(info.jeonipDue)}). 그래야 다음 날 0시에 대항력이 생겨요. 온라인 신청은 본인만 할 수 있어요.${S('6,7,2')}`;
   $('#hugDesc').innerHTML = `HUG 기준 보증 대상 보증금은 ${REGION_NAME[state.region] === '수도권' ? '수도권' : '수도권 외 지역'} ${won(info.hugLimit)} 이하예요(내 보증금 ${won(state.deposit)} ${state.deposit <= info.hugLimit ? '→ 한도 이내' : '→ <b>한도 초과</b>'}). 근린생활시설은 대상이 아니고, 신청은 ${D(info.hugDue)}쯤까지(계약 기간 절반 전) 해야 해요.${S('8,9')}`;
   $('#renewDesc').innerHTML = `만료 예정 ${D(info.end)}. 갱신 요구는 ${D(info.renewFrom)} ~ ${D(info.renewTo)} 사이에 하고, 한 번 쓸 수 있어요. 인상은 5%까지예요.${S('14,2')}`;
   $('#taxDesc').innerHTML = `${tax.text}${S('10')}`;
 
-  const monthly = state.rent + Math.round((Number($('#fee').value) || 0) * 1e4);
+  const monthly = state.rent + Math.round((amounts.fee || 0) * 1e4);
   const income = Math.round((Number($('#income').value) || 0) * 1e4);
   $('#budgetOut').innerHTML = income
     ? `월 주거비 <b class="num">${won(monthly)}</b> = 월 실수령액의 <b class="num">${Math.round(monthly / income * 100)}%</b>. 보증금 ${won(state.deposit)}은 계약금(보통 10%)과 잔금으로 나눠 내요.`
@@ -289,6 +327,7 @@ function renderAll() {
   renderVerdicts();
   renderTimeline();
   renderFormSummary();
+  renderAmounts();
   syncExample();
   renderStepTexts();
   renderLiveMeter();
@@ -348,9 +387,14 @@ document.addEventListener('click', (e) => {
   const src = e.target.closest('sup.src a');
   if (src) {
     e.preventDefault(); // 주소의 #은 화면 이동(라우팅)에 쓰여서 직접 스크롤해요
+    $('#reference').hidden = false;
     $('#sourcesFold').open = true;
     const li = document.getElementById(src.getAttribute('href').slice(1));
-    li?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (li) {
+      li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $$('.sources li.hit').forEach((x) => x.classList.remove('hit'));
+      li.classList.add('hit');
+    }
   }
 });
 // 타임라인: 전체 / 주요 일정만
@@ -360,10 +404,31 @@ $$('[data-tl-filter]').forEach((b) => b.addEventListener('click', () => {
   $$('[data-tl-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
 }));
 $('#srcToggle').addEventListener('click', (e) => {
-  const on = !$('#contract-view').classList.contains('show-src');
-  $('#contract-view').classList.toggle('show-src', on);
+  const on = !document.body.classList.contains('show-src');
+  document.body.classList.toggle('show-src', on);
   e.currentTarget.setAttribute('aria-pressed', String(on));
   e.currentTarget.textContent = on ? '출처 번호 숨기기' : '출처 번호 보기';
+  // 번호를 누르면 바닥의 출처 목록으로 내려가 그 항목을 표시해요. 목록은 미리 펼쳐 둡니다
+  if (on) { $('#reference').hidden = false; $('#sourcesFold').open = true; }
+});
+// 바닥글 링크: 용어집·출처 펼치고 내려가기
+function openRef(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  $('#reference').hidden = false;
+  el.open = true;
+  el.scrollIntoView({ behavior: slowScroll(), block: 'start' });
+}
+const slowScroll = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+document.addEventListener('click', (e) => {
+  const open = e.target.closest('[data-open]');
+  if (open) { openRef(open.dataset.open); return; }
+  // 단계 안의 'AI … 열기' → 계약 전 확인 도구의 그 도구를 펼치고 이동
+  const tool = e.target.closest('[data-tool]');
+  if (tool) {
+    const d = document.getElementById(tool.dataset.tool);
+    if (d) { d.open = true; d.scrollIntoView({ behavior: slowScroll(), block: 'start' }); $('textarea', d)?.focus({ preventScroll: true }); }
+  }
 });
 
 /* ───────── 용어집 불러오기: terms.json (자주 바뀌지 않는 공개 데이터라 파일 하나로 충분) ───────── */
@@ -410,6 +475,7 @@ function showShare() {
   $('#calGoogle').href = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(`webcal://${feed}`)}`;
   $('#calCopy').dataset.url = `${location.protocol}//${feed}`;
   $('#calBox').hidden = false;
+  $('#calPending').hidden = true;
 }
 async function save() {
   const btn = $('#saveBtn');
@@ -440,28 +506,50 @@ function autosave() {
   setStatus('바뀐 내용이 있어요. 잠시 뒤 자동 저장해요.');
   saveTimer = setTimeout(save, 1500);
 }
-function applyData(d) {
+function applyData(d, fromPlan = false) {
   $(d.type === 'jeonse' ? '#type-jeonse' : '#type-wolse').checked = true;
   $('#contractDate').value = d.contractDate;
   $('#moveDate').value = d.moveDate;
-  $('#deposit').value = d.deposit / 1e4;
-  $('#rent').value = d.rent / 1e4;
+  if (amounts.source !== 'listing' && Number.isFinite(d.deposit)) {
+    amounts = {
+      deposit: Math.round(d.deposit / 1e4),
+      rent: Math.round((d.rent || 0) / 1e4),
+      fee: d.fee !== undefined && d.fee !== '' && Number.isFinite(Number(d.fee)) ? Number(d.fee) : amounts.fee,
+      source: fromPlan ? 'plan' : 'draft', id: null, name: '',
+    };
+  }
   $('#termMonths').value = String(d.termMonths);
   $('#salary').value = d.salary === null ? '' : d.salary / 1e4;
   $('#region').value = d.region;
-  if (d.fee !== undefined) $('#fee').value = d.fee;
   if (d.income !== undefined) $('#income').value = d.income;
   const set = new Set(d.checks);
   $$('.checks > li > input[type="checkbox"]').forEach((b) => { b.checked = set.has(b.closest('li').dataset.id); });
   $$('[data-sub]').forEach((b) => { b.checked = set.has(b.dataset.sub); });
-  syncRentField();
 }
 
 /* ───────── 이 브라우저에 임시 저장: 링크를 만들지 않아도 새로고침해도 남게 ───────── */
 const DRAFT_KEY = 'zipkimi:contract:v1';
+// 예전 버전의 임시 저장은 금액을 직접 들고 있었어요. 새 구조로 처음 덮어쓰기 전에 원본을 한 번 보관해 둡니다
+const DRAFT_BACKUP_KEY = 'zipkimi:contract:v1:backup';
+function backupOldDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw && !localStorage.getItem(DRAFT_BACKUP_KEY) && !JSON.parse(raw).listingId && 'deposit' in JSON.parse(raw)) {
+      localStorage.setItem(DRAFT_BACKUP_KEY, raw);
+    }
+  } catch { /* 깨진 값이면 보관하지 않음 */ }
+}
 function saveDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...readState(), checks: checksNow(), fee: $('#fee').value, income: $('#income').value, edited: userEdited }));
+    const d = { ...readState(), checks: checksNow(), income: $('#income').value, edited: userEdited };
+    if (amounts.source === 'listing') {
+      // 계약은 매물을 가리키기만 해요. 금액은 매물에만 있어요
+      delete d.deposit; delete d.rent;
+      d.listingId = amounts.id;
+    } else {
+      d.fee = String(amounts.fee);
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
   } catch { /* 저장이 막힌 브라우저에서는 화면에서만 유지 */ }
 }
 function restoreDraft() {
@@ -487,7 +575,7 @@ async function loadPlan(code) {
     const res = await fetch(`/api/plans?code=${encodeURIComponent(code)}`);
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `불러오지 못했어요 (${res.status}).`);
-    applyData(body.data);
+    applyData(body.data, true);
     planCode = body.code;
     renderAll();
     showShare();
@@ -498,19 +586,13 @@ async function loadPlan(code) {
 }
 
 /* ───────── 이벤트 ───────── */
-function syncRentField() {
-  const jeonse = $('#type-jeonse').checked;
-  $('#rent').disabled = jeonse;
-  if (jeonse) $('#rent').value = 0;
-}
 $$('.form-panel input, .form-panel select').forEach((el) => el.addEventListener('input', () => {
-  if (el.name === 'type') syncRentField();
   if (el.id === 'shareUrl') return;
   userEdited = true;
   renderAll();
   autosave();
 }));
-$$('#income, #fee').forEach((el) => el.addEventListener('input', () => { renderStepTexts(); saveDraft(); }));
+$$('#income').forEach((el) => el.addEventListener('input', () => { renderStepTexts(); saveDraft(); }));
 document.addEventListener('change', (e) => {
   if (e.target.matches('.checks input[type="checkbox"], [data-sub]')) { renderProgress(); renderProtect(); saveDraft(); autosave(); }
 });
@@ -530,7 +612,8 @@ const MAX_PHOTO_CHARS = 3_900_000; // 서버 한도(4,000,000자)보다 조금 �
 const PHOTO_EDGE = 2000; // 긴 변을 이 픽셀까지 줄여서 보냅니다
 const slow = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LEVEL_LABEL = { clauses: { ok: '권장', warn: '주의', risk: '위험', info: '참고' }, registry: { ok: '안전', warn: '주의', risk: '위험' } };
-const AI_DISCLAIMER = '<p class="live-warn">AI 답은 틀릴 수 있고 법률 자문이 아니에요. 계약 전에는 원문과 공식 안내, 전문가에게 꼭 다시 확인하세요.</p>';
+// 'AI 답변은 참고용' 안내는 계약 전 확인 도구 영역 맨 위에 한 번만 둡니다
+const AI_DISCLAIMER = '';
 
 function countChips(rows, kind) {
   const n = { risk: 0, warn: 0, ok: 0, info: 0 };
@@ -559,8 +642,8 @@ function renderLiveRegistry(out, data) {
     : '<p class="found">AI가 등기부 기록을 찾지 못했어요. 갑구·을구가 잘 보이게 다시 넣어 보세요.</p>'}
     <p class="live-signals"><b>글에서 바로 찾은 낱말</b> ${signals}<br><small>AI와 별개로 서비스가 직접 찾았어요. ‘말소’라고 적힌 줄은 뺐어요.</small></p>
     <div class="row2">
-      <div class="field"><label for="liveMax">선순위 채권최고액·전세금 합계 (만 원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
-      <div class="field"><label for="livePrice">이 집 시세 (만 원)</label><input type="number" id="livePrice" min="0" step="500" placeholder="실거래가로 확인"></div>
+      <div class="field"><label for="liveMax">선순위 채권최고액·전세금 합계 (만원)</label><input type="number" id="liveMax" min="0" step="100" value="${Math.round(data.maxClaims / 1e4)}"></div>
+      <div class="field"><label for="livePrice">이 집 시세 (만원)</label><input type="number" id="livePrice" min="0" step="500" placeholder="실거래가로 확인"></div>
     </div>
     <p class="desc" style="margin:0">근저당 채권최고액과 전세권 전세금을 글에서 찾아 숫자만 더한 값이에요. 잘못 읽었거나 말소된 기록이 섞였다면 고쳐 넣으세요.</p>
     <div class="meter" id="liveMeter"></div>${AI_DISCLAIMER}`;
@@ -718,6 +801,7 @@ $$('.ai-live').forEach((form) => {
 });
 
 $('#saveBtn').addEventListener('click', save);
+$('#calSave').addEventListener('click', () => { $('#saveBtn').scrollIntoView({ behavior: slowScroll(), block: 'center' }); save(); });
 $('#calCopy').addEventListener('click', async (e) => {
   const url = e.currentTarget.dataset.url;
   try { await navigator.clipboard.writeText(url); setStatus('캘린더 주소를 복사했어요. 캘린더 앱의 ‘URL로 구독’에 붙여 넣으세요.'); }
@@ -729,30 +813,35 @@ $('#copyBtn').addEventListener('click', async () => {
 });
 
 /* ───────── 매물 비교 → 계약 준비 연결 ───────── */
-// 금액 단위: 매물 비교도 만 원, 계약 준비 입력칸도 만 원
+// 금액 단위: 매물 비교도 만원, 계약 준비 입력칸도 만원
 window.zipkimiContract = {
-  // 매물 비교에서 고른 집이 있는지 알려 줌 → 예시 표시를 켜고 끕니다
-  setChosen(has) {
-    chosenListing = !!has;
-    syncExample();
+  // 매물 목록을 다 읽은 뒤 고른 집(없으면 null)을 알려 줌 → 금액과 예시 표시를 맞춥니다.
+  // 매물 상세에서 금액을 고쳤다면 여기서 계약 쪽에도 반영돼요
+  setChosen(listing) {
+    const before = JSON.stringify([amounts.source, amounts.deposit, amounts.rent, amounts.fee]);
+    if (listing) amounts = amountsFromListing(listing);
+    else if (amounts.source === 'listing') amounts = { ...EXAMPLE_AMOUNTS, source: 'example', id: null, name: '' };
+    chosenListing = !!listing;
+    renderAll();
+    if (before !== JSON.stringify([amounts.source, amounts.deposit, amounts.rent, amounts.fee])) autosave();
   },
   fill(listing) {
     $(listing.rent > 0 ? '#type-wolse' : '#type-jeonse').checked = true;
-    syncRentField();
-    $('#deposit').value = listing.deposit;
-    $('#rent').value = listing.rent;
-    $('#fee').value = listing.fee;
+    amounts = amountsFromListing(listing);
     chosenListing = true;
     $('#formFold').open = true;
     renderAll();
     autosave();
-    setStatus(`‘${listing.name}’의 보증금·월세·관리비를 채웠어요. 계약일과 입주일을 내 날짜로 바꿔 보세요.`);
+    setStatus(`‘${listing.name}’ 매물의 금액으로 바꿨어요. 계약일과 입주일을 내 날짜로 바꿔 보세요.`);
   },
 };
 
 /* ───────── 시작 ───────── */
 renderSources();
 renderSubs();
+backupOldDraft();
+const startListing = chosenFromStorage();
+if (startListing) { amounts = amountsFromListing(startListing); chosenListing = true; }
 const startCode = new URLSearchParams(location.search).get('plan');
 if (!startCode && restoreDraft()) setStatus('이 브라우저에 저장해 둔 계약 준비 내용을 불러왔어요.');
 state = readState(); info = derive(state);

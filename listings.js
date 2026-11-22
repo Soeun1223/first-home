@@ -29,6 +29,7 @@ const state = {
   listings: [],
   storageOK: true,
   sort: 'score',
+  loaded: false, // 저장된 매물을 다 읽었는지
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -322,6 +323,13 @@ function parseMinutes(raw, top, ex) {
   return { value: n };
 }
 
+// 기본 정보·위치를 한 폼에서 검사합니다
+function validateDetail(form, excludeId) {
+  const base = validateForm(form, excludeId);
+  const ref = validateRef(form);
+  return { values: { ...base.values, ...ref.values }, errors: { ...base.errors, ...ref.errors } };
+}
+
 function validateRef(form) {
   const errors = {};
   const values = {};
@@ -419,7 +427,7 @@ function refText(l) {
   if (l.place) parts.push(esc(l.place));
   if (l.school != null) parts.push(`학교까지 도보 ${l.school}분`);
   if (l.station != null) parts.push(`역까지 도보 ${l.station}분`);
-  return parts.length ? parts.join(' · ') : '입력 안 함 · 매물을 열어 맨 아래에서 입력';
+  return parts.length ? parts.join(' · ') : '입력 안 함 · 매물을 열어 기본 정보·위치에서 입력';
 }
 
 function renderCompare() {
@@ -464,9 +472,9 @@ function renderCompare() {
           <div class="stat"><dt>보증금</dt><dd>${formatMan(l.deposit)}</dd></div>
           <div class="stat"><dt>월 고정비</dt><dd>${formatMan(l.rent + l.fee)}${l.fee ? `<small> (${l.rent}+${l.fee})</small>` : ''}</dd></div>
         </dl>
-        <p class="ref-box"><b>위치 참고</b>${refText(l)}</p>
+        <p class="ref-box"><b>위치 참고 (점수와 무관)</b>${refText(l)}</p>
         <div class="lc-actions">
-          <button type="button" class="btn ${chosen ? '' : 'btn-primary'}" data-prepare="${esc(l.id)}">${chosen ? '계약 준비 이어서 하기' : '이 집으로 계약 준비'}</button>
+          <button type="button" class="btn ${chosen ? '' : 'btn-primary'}" data-prepare="${esc(l.id)}">${chosen ? '계약 준비 이어서 하기' : '이 집으로 정했어요'}</button>
           <button type="button" class="btn btn-danger" data-delete="${esc(l.id)}" aria-label="${esc(l.name)} 매물 삭제">매물 삭제하기</button>
         </div>
       </li>`;
@@ -482,12 +490,13 @@ function renderCompare() {
 
 function renderContractHome() {
   const el = $('#contract-home');
-  const listing = state.checklist ? findListing(readChosen()) : null;
-  window.zipkimiContract?.setChosen(!!listing);
+  const listing = state.loaded ? findListing(readChosen()) : null;
+  // 매물을 다 읽기 전에는 계약 쪽 금액을 건드리지 않아요(계약 화면이 저장소에서 직접 읽어 둠)
+  if (state.loaded) window.zipkimiContract?.setChosen(listing || null);
   if (!listing) {
     el.innerHTML = `
       <div class="notice notice-info">
-        <p><strong>아직 고른 집이 없어서 예시 계약으로 보여 드려요.</strong> 매물 카드에서 ‘이 집으로 계약 준비’를 누르면 내 집 금액으로 바뀌어요.</p>
+        <p><strong>아직 고른 집이 없어서 예시 계약으로 보여 드려요.</strong> 매물 상세 맨 아래 ‘이 집으로 정했어요’를 누르면 그 집 금액으로 바뀌어요.</p>
         <div class="btn-row"><a class="btn" href="#/">매물 비교로 가기</a><button type="button" class="btn btn-demo" data-demo>매물 예시 불러오기</button></div>
       </div>`;
     return;
@@ -526,11 +535,11 @@ function prepareContract(listing) {
   writeChosen(listing.id);
   if (window.zipkimiContract) window.zipkimiContract.fill(listing);
   location.hash = '#/contract';
-  showToast('✓ 계약 준비에 이 집 금액을 채웠어요');
+  showToast('✓ 이 집으로 계약 준비를 시작해요');
 }
 
 // 시연용 '매물 예시 불러오기': 체크리스트를 다 채운 가상 매물 하나를 비교 목록에 넣습니다.
-// 계약 준비는 그 카드의 '이 집으로 계약 준비'로 시작해요. 이미 있으면 새로 만들지 않고 그 카드를 보여 줍니다.
+// 계약 준비는 그 카드의 '이 집으로 정했어요'로 시작해요. 이미 있으면 새로 만들지 않고 그 카드를 보여 줍니다.
 const DEMO_ID = 'demo-listing';
 const DEMO_LISTING = {
   name: '예시 · 이문동 3층 남향',
@@ -561,7 +570,7 @@ function loadDemoListing() {
     save();
   }
   const showCard = () => {
-    setAppStatus(`<div class="notice notice-info"><p>${existed ? '예시 매물이 이미 목록에 있어요.' : '예시 매물을 불러왔어요.'} ‘${esc(listing.name)}’ 카드의 <strong>이 집으로 계약 준비</strong>를 누르면 ② 계약 준비가 시작돼요.</p></div>`);
+    setAppStatus(`<div class="notice notice-info"><p>${existed ? '예시 매물이 이미 목록에 있어요.' : '예시 매물을 불러왔어요.'} ‘${esc(listing.name)}’ 카드의 <strong>이 집으로 정했어요</strong>를 누르면 계약 준비가 시작돼요.</p></div>`);
     const btn = document.querySelector(`#compare-body [data-prepare="${CSS.escape(DEMO_ID)}"]`);
     if (btn) {
       btn.closest('.listing-card').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -629,7 +638,7 @@ function updateDetailScore(listing) {
       <div class="stat"><dt>전체 확인</dt><dd>${s.answered}<small> / ${s.total}</small></dd></div>
     </dl>
     ${reasons.length ? `<p class="note">${s.verdict === 'fail' ? '문제' : '미확인'}: ${esc(reasons.join(', '))}</p>` : ''}
-    <p class="autosave-side ${state.storageOK ? '' : 'autosave-off'}"><span class="autosave-dot" aria-hidden="true"></span>${state.storageOK ? '고르는 즉시 자동 저장돼요' : '이 브라우저에서는 저장되지 않아요'}</p>`;
+    ${state.storageOK ? '' : '<p class="autosave-side autosave-off"><span class="autosave-dot" aria-hidden="true"></span>이 브라우저에서는 저장되지 않아요</p>'}`;
   for (const tier of state.checklist.tiers) {
     const el = document.getElementById(`tier-score-${tier.id}`);
     if (!el) continue;
@@ -640,27 +649,23 @@ function updateDetailScore(listing) {
   }
 }
 
-function updateInfoSummary(listing) {
-  $('#info-summary').textContent = `보증금 ${formatMan(listing.deposit)} · 월 ${formatMan(listing.rent + listing.fee)}`;
-}
-
 function renderDetail(listing) {
   $('#detail-title').textContent = listing.name;
   const form = $('#edit-form');
   form.elements.name.value = listing.name;
   form.elements.deposit.value = listing.deposit;
   form.elements.rent.value = listing.rent;
-  form.elements.fee.value = listing.fee;
+  form.elements.fee.value = listing.fee || '';
+  form.elements.place.value = listing.place;
+  form.elements.school.value = listing.school ?? '';
+  form.elements.station.value = listing.station ?? '';
   showFormErrors(form, 'e', {});
-  updateInfoSummary(listing);
-  // 휴대전화에서는 체크리스트가 먼저 보이도록 기본 정보를 접어 둔다.
-  $('#info-card').open = window.matchMedia('(min-width: 1024px)').matches;
-
-  const ref = $('#ref-form');
-  ref.elements.place.value = listing.place;
-  ref.elements.school.value = listing.school ?? '';
-  ref.elements.station.value = listing.station ?? '';
-  showFormErrors(ref, 'r', {});
+  const chosen = readChosen() === listing.id;
+  $('#prepare-btn').textContent = chosen ? '계약 준비 이어서 하기' : '이 집으로 정했어요';
+  $('#prepare-title').textContent = chosen ? '이 집으로 계약 준비 중이에요' : '이 집으로 정했나요?';
+  $('#prepare-help').textContent = chosen
+    ? '여기서 고친 금액은 계약 준비에도 그대로 반영돼요.'
+    : '이 매물의 보증금·월세·관리비로 계약 준비를 시작해요. 계약일부터 입주 후까지 할 일을 날짜순으로 정리해 드려요.';
 
   const { scale, gateLabels } = state.checklist;
   const scoredOptions = [
@@ -833,7 +838,9 @@ function bindEvents() {
 
   $('#prepare-btn').addEventListener('click', () => {
     const listing = findListing(currentId);
-    if (listing) prepareContract(listing);
+    if (!listing) return;
+    if (readChosen() === listing.id) location.hash = '#/contract';
+    else prepareContract(listing);
   });
 
   $('#sort-select').addEventListener('change', (e) => {
@@ -850,28 +857,15 @@ function bindEvents() {
     const listing = findListing(currentId);
     if (!listing) return;
     const form = e.currentTarget;
-    const { values, errors } = validateForm(form, listing.id);
+    const { values, errors } = validateDetail(form, listing.id);
     showFormErrors(form, 'e', errors);
     if (Object.keys(errors).length) return;
     Object.assign(listing, values, { updatedAt: Date.now() });
     const ok = save();
     $('#detail-title').textContent = listing.name;
     document.title = `${listing.name} · 집키미`;
-    flashNotice($('#edit-form-error'), ok, '기본 정보를 저장했어요.');
-    updateInfoSummary(listing);
+    flashNotice($('#edit-form-error'), ok, '기본 정보·위치를 저장했어요.');
     updateDetailScore(listing);
-  });
-
-  $('#ref-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const listing = findListing(currentId);
-    if (!listing) return;
-    const form = e.currentTarget;
-    const { values, errors } = validateRef(form);
-    showFormErrors(form, 'r', errors);
-    if (Object.keys(errors).length) return;
-    Object.assign(listing, values, { updatedAt: Date.now() });
-    flashNotice($('#ref-form-error'), save(), '위치 참고 정보를 저장했어요. 점수에는 반영되지 않아요.');
   });
 
   $('#delete-btn').addEventListener('click', () => {
@@ -961,6 +955,7 @@ async function init() {
     return;
   }
   state.listings = saved.listings;
+  state.loaded = true;
   setAppStatus('');
   route();
 }
