@@ -178,10 +178,16 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 /* 비교 */
 .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .section-head h2 { margin: 0; }
-.sort { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-body-s); }
+.sort { position: relative; display: flex; align-items: center; color: var(--muted); font-size: var(--fs-body-s); }
 .sort select {
-  font: inherit; font-size: var(--fs-body); font-weight: 600; color: var(--text);
-  background: var(--surface-2); border: 0; border-radius: 999px; padding: 8px 14px; min-height: 44px;
+  font: inherit; font-size: var(--fs-body-s); font-weight: 600; color: var(--text);
+  background: var(--surface-2); border: 0; border-radius: 999px; padding: 8px 40px 8px 16px; min-height: 44px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+}
+/* 아래 화살표: 버튼 안쪽 오른쪽 */
+.sort::after {
+  content: ""; position: absolute; right: 18px; top: 50%; width: 7px; height: 7px; pointer-events: none;
+  border-right: 2px solid var(--text); border-bottom: 2px solid var(--text); transform: translateY(-70%) rotate(45deg);
 }
 
 .listing-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
@@ -601,8 +607,6 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 .listing-card.chosen { border-color: var(--green); }
 
 /* ===== 계약 준비 화면을 원룸 체크리스트 디자인으로 맞춘다 ===== */
-.cv-intro { margin: 4px 0 16px; }
-.cv-intro h2 { font-size: var(--fs-title-l); letter-spacing: -0.03em; }
 .cv .eyebrow { display: block; font-size: var(--fs-caption); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
 .cv .num { font-variant-numeric: tabular-nums; }
 .cv .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
