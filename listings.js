@@ -429,7 +429,7 @@ function renderCompare() {
       <div class="empty">
         <strong>아직 비교할 매물이 없어요.</strong>
         위 ‘매물 추가’에서 보고 온 방의 이름과 보증금·월세를 입력하면 체크리스트가 만들어져요.
-        <div class="btn-row" style="margin-top:12px"><button type="button" class="btn" data-demo>매물 예시 불러오기</button></div>
+        <div class="btn-row" style="margin-top:12px"><button type="button" class="btn btn-demo" data-demo>매물 예시 불러오기</button></div>
       </div>`;
     return;
   }
@@ -475,8 +475,7 @@ function renderCompare() {
   body.innerHTML = `
     <ul class="listing-grid" role="list" aria-label="매물 ${rows.length}개, ${esc($('#sort-select').selectedOptions[0].textContent)}">
       ${cards}
-    </ul>
-    <p class="help" style="margin-top:16px">등급: S 90점 이상, A 75점 이상, B 60점 이상, C 60점 미만. ‘추천’은 필수 판정을 통과한 매물 중 점수가 가장 높은 곳이에요.</p>`;
+    </ul>`;
 }
 
 /* ---------- 계약 준비 화면: 고른 집 요약 ---------- */
@@ -497,7 +496,7 @@ function renderContractHome() {
     el.innerHTML = `
       <div class="notice notice-info">
         <p><strong>아직 고른 집이 없어요.</strong> ① 매물 비교의 매물 카드에서 ‘이 집으로 계약 준비’를 누르면 보증금·월세·관리비가 아래에 채워지고, 그 집의 필수 확인 결과가 여기에 보여요. 지금 아래 값은 예시예요.</p>
-        <div class="btn-row"><a class="btn" href="#/">매물 비교로 가기</a><button type="button" class="btn" data-demo>매물 예시 불러오기</button></div>
+        <div class="btn-row"><a class="btn" href="#/">매물 비교로 가기</a><button type="button" class="btn btn-demo" data-demo>매물 예시 불러오기</button></div>
       </div>`;
     return;
   }

@@ -1,17 +1,9 @@
-// 첫 화면 안내(모션 그래픽) · 처음 들어온 브라우저에서 한 번 보여 주고, '시작하기'를 누르면 닫힙니다.
+// 첫 화면 안내(모션 그래픽) · 페이지에 들어올 때마다 보여 주고, '시작하기'를 누르면 닫힙니다.
 //   다시 보기: 바닥글의 '서비스 소개 다시 보기' 또는 주소 뒤에 ?intro
 //   저장 링크(?plan=코드)로 들어온 경우에는 바로 계약 준비를 보여 주려고 띄우지 않습니다.
-const SEEN_KEY = 'zipkimi:intro-seen';
 const intro = document.getElementById('intro');
 const startBtn = document.getElementById('intro-start');
 let lastFocus = null;
-
-function seen() {
-  try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return false; }
-}
-function markSeen() {
-  try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* 저장이 막혀도 닫기는 됩니다 */ }
-}
 
 function openIntro() {
   lastFocus = document.activeElement;
@@ -26,7 +18,6 @@ function openIntro() {
 }
 
 function closeIntro() {
-  markSeen();
   intro.classList.add('leaving');
   const done = () => {
     intro.hidden = true;
@@ -48,4 +39,4 @@ intro.addEventListener('keydown', (e) => {
 document.getElementById('intro-replay')?.addEventListener('click', openIntro);
 
 const params = new URLSearchParams(location.search);
-if (params.has('intro') || (!seen() && !params.has('plan'))) openIntro();
+if (params.has('intro') || !params.has('plan')) openIntro();

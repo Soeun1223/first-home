@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261118k">
+  <link rel="stylesheet" href="style.css?v=20261122b">
 </head>
 <body>
   <!-- 첫 화면 안내 (intro.js) -->
@@ -59,7 +59,6 @@
     <div class="wrap">
       <div class="brand-row">
         <h1><a href="#/" id="home-link"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M14.6 3.5a2.2 2.2 0 0 1 2.8 0l11.1 9.3c.9.8.4 2.2-.8 2.2H26v11.3A2.7 2.7 0 0 1 23.3 29H19v-7.2a3 3 0 0 0-6 0V29H8.7A2.7 2.7 0 0 1 6 26.3V15H4.3c-1.2 0-1.7-1.4-.8-2.2z"/></svg>집키미</a></h1>
-        <p class="tagline">본 집을 비교하고, 고른 집으로 계약까지 한 번에 확인해요.</p>
       </div>
       <nav class="main-tabs" aria-label="단계">
         <a href="#/" data-tab="compare"><span class="tab-no">1</span>매물 비교</a>
@@ -81,21 +80,21 @@
           <div id="add-form-error" class="notice notice-error" role="alert" hidden></div>
           <div class="field-grid">
             <div class="field field-wide">
-              <label for="f-name">매물 이름 <span class="req">(필수)</span></label>
-              <input id="f-name" name="name" type="text" maxlength="30" autocomplete="off"
+              <label for="f-name">매물 이름 <span class="req" aria-hidden="true">*</span></label>
+              <input id="f-name" name="name" aria-required="true" type="text" maxlength="30" autocomplete="off"
                      placeholder="예: 이문동 3층 남향" aria-describedby="f-name-help f-name-err">
               <p id="f-name-help" class="help">구별하기 쉬운 별칭. 집주인 연락처 같은 개인정보는 적지 마세요.</p>
               <p id="f-name-err" class="field-error"></p>
             </div>
             <div class="field">
-              <label for="f-deposit">보증금 <span class="req">(필수, 만원)</span></label>
-              <input id="f-deposit" name="deposit" type="text" inputmode="numeric" autocomplete="off"
+              <label for="f-deposit">보증금 <span class="opt">(만원)</span> <span class="req" aria-hidden="true">*</span></label>
+              <input id="f-deposit" name="deposit" aria-required="true" type="text" inputmode="numeric" autocomplete="off"
                      placeholder="예: 500" aria-describedby="f-deposit-err">
               <p id="f-deposit-err" class="field-error"></p>
             </div>
             <div class="field">
-              <label for="f-rent">월세 <span class="req">(필수, 만원)</span></label>
-              <input id="f-rent" name="rent" type="text" inputmode="numeric" autocomplete="off"
+              <label for="f-rent">월세 <span class="opt">(만원)</span> <span class="req" aria-hidden="true">*</span></label>
+              <input id="f-rent" name="rent" aria-required="true" type="text" inputmode="numeric" autocomplete="off"
                      placeholder="예: 45" aria-describedby="f-rent-err">
               <p id="f-rent-err" class="field-error"></p>
             </div>
@@ -108,9 +107,8 @@
           </div>
           <div class="btn-row">
             <button type="submit" class="btn btn-primary">추가하고 체크리스트 작성</button>
-            <button type="button" class="btn" data-demo>매물 예시 불러오기</button>
+            <button type="button" class="btn btn-demo" data-demo>매물 예시 불러오기</button>
           </div>
-          <p class="help" style="margin-top:8px">‘매물 예시 불러오기’는 체크리스트를 다 채운 가상 매물 하나를 아래 비교 목록에 넣어요. 그 카드의 ‘이 집으로 계약 준비’로 ② 계약 준비를 시작할 수 있어요. 시연용이에요.</p>
         </form>
       </details>
 
@@ -128,7 +126,11 @@
             </select>
           </div>
         </div>
-        <p class="help">필수 항목으로 <strong>통과·보류·탈락</strong>을 먼저 판정하고, 점수는 중요 80점 + 있으면 좋음 20점으로 매겨요(미확인은 0점). 위치·거리는 점수에 넣지 않고 각 매물 아래에 참고로 보여 줘요.</p>
+        <details class="score-info">
+          <summary>점수 기준 보기</summary>
+          <p>필수 항목으로 <strong>통과·보류·탈락</strong>을 먼저 판정하고, 점수는 중요 80점 + 있으면 좋음 20점으로 매겨요(미확인은 0점). 위치·거리는 점수에 넣지 않고 각 매물 아래에 참고로 보여 줘요.</p>
+          <p>등급: S 90점 이상, A 75점 이상, B 60점 이상, C 60점 미만. ‘추천’은 필수 판정을 통과한 매물 중 점수가 가장 높은 곳이에요.</p>
+        </details>
         <div id="compare-body"></div>
       </section>
     </div>
@@ -551,7 +553,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="contract.js?v=20261118k"></script>
-  <script type="module" src="listings.js?v=20261118i"></script>
-  <script type="module" src="intro.js?v=20261118j"></script>
+  <script type="module" src="listings.js?v=20261122b"></script>
+  <script type="module" src="intro.js?v=20261122a"></script>
 </body>
 </html>
