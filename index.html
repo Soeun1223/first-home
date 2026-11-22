@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261122b">
+  <link rel="stylesheet" href="style.css?v=20261122c">
 </head>
 <body>
   <!-- 첫 화면 안내 (intro.js) -->
@@ -234,10 +234,12 @@
       </div>
       <div id="contract-home"></div>
 
-      <div class="layout">
+      <div class="layout" id="contractLayout">
         <!-- 내 계약 정보 -->
         <aside class="panel form-panel" aria-labelledby="form-h">
-          <div><span class="eyebrow">My Contract</span><h2 id="form-h">내 계약 정보</h2></div>
+          <details class="fold form-fold" id="formFold" open>
+          <summary><div class="form-fold-h"><span class="eyebrow">My Contract</span><h2 id="form-h">내 계약 정보 <span class="ex-badge">예시</span></h2><span class="fold-summary" id="formSummary"></span></div><span class="fold-edit" aria-hidden="true">수정</span><span class="fold-icon" aria-hidden="true"></span></summary>
+          <div class="form-fields">
           <div class="field">
             <span id="type-l" class="field-l">계약 유형</span>
             <div class="seg" role="radiogroup" aria-labelledby="type-l">
@@ -267,6 +269,8 @@
             </select>
             <span class="hint">임대차 신고 대상인지, 보증 한도가 얼마인지 판단할 때 써요.</span>
           </div>
+          </div>
+          </details>
           <div class="save">
             <button type="button" class="btn" id="saveBtn">이 계약 저장하고 링크·캘린더 받기</button>
             <div class="share" id="shareRow" hidden>
@@ -292,7 +296,7 @@
           <div class="verdicts" id="verdicts"></div>
           <section class="panel" aria-labelledby="tl-h">
             <div class="section-h">
-              <div><span class="eyebrow">Timeline</span><h2 id="tl-h">내 계약 타임라인</h2></div>
+              <div><span class="eyebrow">Timeline</span><h2 id="tl-h">내 계약 타임라인 <span class="ex-badge">예시</span></h2></div>
               <small id="todayLabel"></small>
             </div>
             <ol class="timeline" id="timeline"></ol>
@@ -552,8 +556,8 @@
   <!-- 저장 알림: 잠깐 떴다가 사라진다 -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="contract.js?v=20261118k"></script>
-  <script type="module" src="listings.js?v=20261122b"></script>
+  <script type="module" src="contract.js?v=20261122c"></script>
+  <script type="module" src="listings.js?v=20261122c"></script>
   <script type="module" src="intro.js?v=20261122a"></script>
 </body>
 </html>

@@ -126,40 +126,79 @@ const MINE = {
 let TERMS = {};
 let state, info;
 
+// 일정 목록: 타임라인과 '지금 해야 할 일'이 같이 씁니다. task = 사용자가 직접 할 일, hint = 짧은 안내(용어 버튼 없이)
+function events() {
+  return [
+    { d: addDays(info.c, -1), step: 1, task: true, title: '계약 전까지 확인', hint: '등기부·건축물대장·시세를 확인하고 대출 자격을 알아봐요.', body: `${T('deunggi', '등기부')}·${T('geonchuk', '건축물대장')}·시세를 확인하고 대출 자격을 알아봐요.`, s: '1,15,16' },
+    { d: info.c, step: 2, task: true, title: '계약일', hint: '집주인 신분을 확인하고 특약을 검토한 뒤 서명해요.', body: `집주인 신분 확인, ${T('imdaein', '정보 제시')} 요청, ${T('teukyak', '특약')} 검토 후 서명해요.`, s: '1,14', key: true },
+    info.singoTarget && { d: info.singoDue, step: 2, task: true, title: '임대차 신고', hint: '계약서를 첨부해 신고하면 확정일자도 자동으로 받아요.', body: `계약일부터 30일 안에 신고하면 ${T('hwakjeong', '확정일자')}도 자동으로 받아요.`, s: '3,4' },
+    { d: info.m, step: 3, task: true, title: '잔금·입주·전입신고', hint: `잔금 직전 등기부를 다시 보고, 이사 당일 전입신고${info.singoTarget ? '' : '와 확정일자'}를 해요.`, body: `잔금 직전 등기부 재확인 → 잔금(집주인 명의 계좌) → 입주 → 당일 ${T('jeonip', '전입신고')}${info.singoTarget ? '' : '와 확정일자'}.`, s: '1,15,6', key: true },
+    { d: info.daehang, step: 3, title: '대항력·우선변제권 발생 (0시)', body: `이때부터 ${T('daehang', '대항력')}과 ${T('usun', '우선변제권')}이 생겨요. 잔금일 당일에 생긴 근저당은 나보다 앞서요.`, s: '2,14', key: true },
+    { d: info.jeonipDue, step: 3, title: '전입신고 법정 기한', body: '이사한 날부터 14일. 넘기면 과태료가 붙어요.', s: '6,7' },
+    { d: info.hugDue, step: 3, task: true, title: '반환보증 신청', hint: '계약 기간의 절반이 지나기 전에 전세보증금반환보증을 신청해요.', body: `${T('hug', '전세보증금반환보증')}은 계약 기간의 절반이 지나기 전에 신청해요.`, s: '8,9' },
+    state.type === 'wolse' && state.rent && { d: new Date(info.m.getFullYear() + 1, 0, 15), step: 4, task: true, title: '연말정산 · 월세 세액공제', hint: '연말정산 때 월세 세액공제를 신청해요.', body: `${T('seaek', '월세 세액공제')}를 신청해요. 놓쳤다면 5년 안에 경정청구할 수 있어요.`, s: '10' },
+    { d: info.renewFrom, step: 4, task: true, title: '계약 갱신 요구', hint: `${D(info.renewTo)}까지 계약갱신요구권을 쓸 수 있어요.`, body: `${D(info.renewTo)}까지 ${T('gaengsin', '계약갱신요구권')}을 쓸 수 있어요.`, s: '14' },
+    { d: info.end, step: 4, title: '계약 만료(예상)', body: '보증금을 돌려받은 뒤에 전출하세요. 먼저 전출하면 대항력이 사라져요.', s: '2' },
+  ].filter(Boolean).sort((a, b) => a.d - b.d);
+}
+
+// 상태 배지: 지남(완료) · 임박(7일 이내, 주의) · 예정
+function ddayChip(d) {
+  const diff = Math.round((d - today()) / DAY);
+  if (diff < 0) return `<span class="chip done">지남</span>`;
+  return `<span class="chip ${diff <= 7 ? 'warn' : 'info'}">${dday(d)}</span>`;
+}
+
 function renderVerdicts() {
+  const t0 = today();
+  const next = events().find((e) => e.task && e.d >= t0);
   const tax = taxInfo(state);
-  const items = [
-    ['임대차 신고', info.singoTarget ? `<span class="chip warn">대상</span> ${D(info.singoDue)}까지` : '<span class="chip ok">대상 아님</span>',
-      info.singoTarget ? `계약일부터 30일 · ${dday(info.singoDue)}` : '확정일자는 따로 받아요'],
-    ['대항력 발생', `<span class="num">${D(info.daehang)}</span> 0시`, '입주·전입 다음 날이에요'],
-    ['반환보증 신청 마감', `<span class="num">${D(info.hugDue)}</span>`, state.deposit > info.hugLimit ? `<span class="chip risk">한도 ${won(info.hugLimit)} 초과</span>` : `한도 ${won(info.hugLimit)} 이내`],
-    ['월세 세액공제', tax.ok === true ? `<span class="chip ok">가능</span> 약 ${won(tax.amount)}/년` : tax.ok === null ? '<span class="chip info">총급여 필요</span>' : '<span class="chip">해당 없음</span>',
-      tax.ok === true ? `공제율 ${Math.round(tax.rate * 100)}% · 요건 충족 시` : ''],
+  const hero = next ? `
+    <div class="next-task">
+      <span class="next-k">지금 해야 할 일 <span class="ex-badge">예시</span></span>
+      <div class="next-main"><strong class="next-t">${next.title}</strong><span class="next-dday">${dday(next.d)}</span></div>
+      <span class="next-date">${D(next.d)}까지</span>
+      <p class="next-hint">${next.hint}</p>
+    </div>` : `
+    <div class="next-task"><span class="next-k">지금 해야 할 일</span><div class="next-main"><strong class="next-t">남은 일정이 없어요</strong></div></div>`;
+  const rows = [
+    ['임대차 신고', info.singoTarget ? `${D(info.singoDue)}까지` : '대상 아님', info.singoTarget ? ddayChip(info.singoDue) : '<span class="chip ok">확정일자 따로</span>'],
+    ['대항력 발생', `${D(info.daehang)} 0시`, ddayChip(info.daehang)],
+    ['반환보증 신청 마감', D(info.hugDue), state.deposit > info.hugLimit ? `<span class="chip risk">한도 초과</span>` : ddayChip(info.hugDue)],
   ];
-  $('#verdicts').innerHTML = items.map(([k, v, d]) => `<div class="verdict"><span class="k">${k}</span><span class="v">${v}</span><span class="d">${d}</span></div>`).join('');
+  const perk = tax.ok === true ? `<span class="chip ok">가능</span> 1년에 최대 약 ${won(tax.amount)} (공제율 ${Math.round(tax.rate * 100)}%)`
+    : tax.ok === null ? '<span class="chip info">총급여 필요</span> 연 총급여를 넣으면 계산해요'
+    : '<span class="chip">해당 없음</span>';
+  $('#verdicts').innerHTML = `${hero}
+    <div class="key-dates">
+      <h3>주요 일정</h3>
+      <ul>${rows.map(([k, v, c]) => `<li><span class="kd-k">${k}</span><span class="kd-v">${v}</span>${c}</li>`).join('')}</ul>
+      <p class="perk"><b>추가 혜택 · 월세 세액공제</b> ${perk}</p>
+    </div>`;
 }
 
 function renderTimeline() {
   const t0 = today();
-  const ev = [
-    { d: addDays(info.c, -1), step: 1, title: '계약 전까지 확인', body: `${T('deunggi', '등기부')}·${T('geonchuk', '건축물대장')}·시세를 확인하고 대출 자격을 알아봐요.`, s: '1,15,16' },
-    { d: info.c, step: 2, title: '계약일', body: `집주인 신분 확인, ${T('imdaein', '정보 제시')} 요청, ${T('teukyak', '특약')} 검토 후 서명해요.`, s: '1,14', key: true },
-    info.singoTarget && { d: info.singoDue, step: 2, title: '임대차 신고 마감', body: `계약일부터 30일 안에 신고하면 ${T('hwakjeong', '확정일자')}도 자동으로 받아요.`, s: '3,4' },
-    { d: info.m, step: 3, title: '잔금·입주일', body: `잔금 직전 등기부 재확인 → 잔금(집주인 명의 계좌) → 입주 → 당일 ${T('jeonip', '전입신고')}${info.singoTarget ? '' : '와 확정일자'}.`, s: '1,15,6', key: true },
-    { d: info.daehang, step: 3, title: '대항력·우선변제권 발생 (0시)', body: `이때부터 ${T('daehang', '대항력')}과 ${T('usun', '우선변제권')}이 생겨요. 잔금일 당일에 생긴 근저당은 나보다 앞서요.`, s: '2,14', key: true },
-    { d: info.jeonipDue, step: 3, title: '전입신고 법정 기한', body: '이사한 날부터 14일. 넘기면 과태료가 붙어요.', s: '6,7' },
-    { d: info.hugDue, step: 3, title: '반환보증 신청 마감(대략)', body: `${T('hug', '전세보증금반환보증')}은 계약 기간의 절반이 지나기 전에 신청해요.`, s: '8,9' },
-    state.type === 'wolse' && state.rent && { d: new Date(info.m.getFullYear() + 1, 0, 15), step: 4, title: '연말정산 · 월세 세액공제', body: `${T('seaek', '월세 세액공제')}를 신청해요. 놓쳤다면 5년 안에 경정청구할 수 있어요.`, s: '10' },
-    { d: info.renewFrom, step: 4, title: '갱신 요구 가능 기간 시작', body: `${D(info.renewTo)}까지 ${T('gaengsin', '계약갱신요구권')}을 쓸 수 있어요.`, s: '14' },
-    { d: info.end, step: 4, title: '계약 만료(예상)', body: '보증금을 돌려받은 뒤에 전출하세요. 먼저 전출하면 대항력이 사라져요.', s: '2' },
-  ].filter(Boolean).sort((a, b) => a.d - b.d);
-
-  $('#timeline').innerHTML = ev.map((e) => `
+  $('#timeline').innerHTML = events().map((e) => `
     <li class="tl-item${e.d < t0 ? ' past' : ''}${e.key ? ' key' : ''}">
-      <div class="tl-date"><span class="d1">${D(e.d)}</span><span class="dday">${e.step === 1 && e.d < info.c ? '계약 전' : dday(e.d)}</span></div>
+      <div class="tl-date"><span class="d1">${D(e.d)}</span>${e.step === 1 && e.d < info.c && e.d >= t0 ? '<span class="chip info">계약 전</span>' : ddayChip(e.d)}</div>
       <div class="tl-body"><h3><span class="tl-step">STEP ${e.step}</span>${e.title}</h3><p>${e.body}${S(e.s)}</p></div>
     </li>`).join('');
   $('#todayLabel').textContent = `오늘 ${D(t0)} 기준`;
+}
+
+// 내 계약 정보 접었을 때 보이는 한 줄 요약
+function renderFormSummary() {
+  const md = parseDate(state.moveDate);
+  const money = state.type === 'jeonse' ? `전세 ${won(state.deposit)}` : `월세 ${(state.deposit / 1e4).toLocaleString('ko-KR')}/${state.rent / 1e4}`;
+  $('#formSummary').textContent = `${money} · 입주 ${md.getMonth() + 1}.${md.getDate()} · ${state.termMonths / 12}년`;
+}
+
+// 예시 상태: 고른 집도, 저장 링크도, 직접 고친 값도 없을 때
+let chosenListing = false, userEdited = false;
+function syncExample() {
+  const ex = !chosenListing && !planCode && !userEdited;
+  $('#contractLayout').classList.toggle('is-example', ex);
 }
 
 function renderStepTexts() {
@@ -257,6 +296,8 @@ function renderAll() {
   info = derive(state);
   renderVerdicts();
   renderTimeline();
+  renderFormSummary();
+  syncExample();
   renderStepTexts();
   renderLiveMeter();
   renderProtect();
@@ -366,6 +407,7 @@ async function save() {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `저장하지 못했어요 (${res.status}).`);
     planCode = body.code;
+    syncExample();
     showShare();
     const t = new Date();
     setStatus(`${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}에 저장했어요. 이 링크로 다시 열 수 있어요.`);
@@ -402,7 +444,7 @@ function applyData(d) {
 const DRAFT_KEY = 'zipkimi:contract:v1';
 function saveDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...readState(), checks: checksNow(), fee: $('#fee').value, income: $('#income').value }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...readState(), checks: checksNow(), fee: $('#fee').value, income: $('#income').value, edited: userEdited }));
   } catch { /* 저장이 막힌 브라우저에서는 화면에서만 유지 */ }
 }
 function restoreDraft() {
@@ -415,6 +457,7 @@ function restoreDraft() {
   if (!d || typeof d !== 'object' || !d.contractDate || !Array.isArray(d.checks)) return false;
   try {
     applyData(d);
+    userEdited = !!d.edited;
   } catch {
     return false;
   }
@@ -446,6 +489,7 @@ function syncRentField() {
 $$('.form-panel input, .form-panel select').forEach((el) => el.addEventListener('input', () => {
   if (el.name === 'type') syncRentField();
   if (el.id === 'shareUrl') return;
+  userEdited = true;
   renderAll();
   autosave();
 }));
@@ -670,12 +714,19 @@ $('#copyBtn').addEventListener('click', async () => {
 /* ───────── 매물 비교 → 계약 준비 연결 ───────── */
 // 금액 단위: 매물 비교도 만 원, 계약 준비 입력칸도 만 원
 window.zipkimiContract = {
+  // 매물 비교에서 고른 집이 있는지 알려 줌 → 예시 표시를 켜고 끕니다
+  setChosen(has) {
+    chosenListing = !!has;
+    syncExample();
+  },
   fill(listing) {
     $(listing.rent > 0 ? '#type-wolse' : '#type-jeonse').checked = true;
     syncRentField();
     $('#deposit').value = listing.deposit;
     $('#rent').value = listing.rent;
     $('#fee').value = listing.fee;
+    chosenListing = true;
+    $('#formFold').open = true;
     renderAll();
     autosave();
     setStatus(`‘${listing.name}’의 보증금·월세·관리비를 채웠어요. 계약일과 입주일을 내 날짜로 바꿔 보세요.`);
@@ -689,5 +740,9 @@ const startCode = new URLSearchParams(location.search).get('plan');
 if (!startCode && restoreDraft()) setStatus('이 브라우저에 저장해 둔 계약 준비 내용을 불러왔어요.');
 state = readState(); info = derive(state);
 renderAll();
+// 예시가 아니면 내 계약 정보는 요약으로 접어 두고, '수정'을 누르면 펼쳐요
+let hasChosen = false;
+try { hasChosen = !!localStorage.getItem('zipkimi:chosen'); } catch { /* 저장이 막힌 브라우저 */ }
+if (startCode || userEdited || hasChosen) $('#formFold').open = false;
 loadTerms();
 if (startCode) loadPlan(startCode);
