@@ -275,7 +275,7 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 
 .category { background: var(--surface); border-radius: var(--r-l); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
 .category-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 20px 24px 4px; }
-.category-head h4 { margin: 0; font-size: var(--fs-title-s); font-weight: 800; }
+.category-head h4 { margin: 0; font-size: var(--fs-title-m); font-weight: 800; letter-spacing: -0.02em; }
 .category-head span { font-size: var(--fs-small); font-weight: 600; background: var(--surface-2); border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
 .tier-desc { color: var(--muted); font-size: var(--fs-body-s); margin: 0; padding: 0 24px 12px; }
 .tier-essential .category-head h4::after {
@@ -333,7 +333,7 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 .detail-side { display: contents; }
 #info-card { order: 0; }
 .detail-main { order: 1; }
-#ref-card { order: 2; }
+#prepare-card { order: 2; }
 .side-score { display: none; }
 .side-score .lc-head { align-items: center; }
 .side-score .note { margin: 0; }
@@ -664,17 +664,21 @@ h3 { font-size: var(--fs-title-s); font-weight: 600; margin: 0 0 6px; }
 /* 계약 준비 화면 맨 위: 고른 집 요약 */
 .home-card { display: grid; gap: 14px; }
 .home-card .lc-head { align-items: center; }
-.home-card .ess { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.home-card .ess li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-body-s); }
-.home-card .ess .where { color: var(--muted); font-size: var(--fs-small); }
+/* 필수 항목 상태: 완료(초록) / 확인 필요(노랑, 누르면 체크리스트) */
+.ess-status { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 10px 16px; border-radius: 999px; font-size: var(--fs-body-s); font-weight: 600; text-decoration: none; }
+.ess-ok { background: var(--green-soft); color: var(--green); padding: 3px 10px; }
+.ess-ok::before { content: "✓"; }
+.ess-need { background: var(--amber-soft); color: var(--amber); min-height: 44px; }
+.ess-need:hover { filter: brightness(0.97); }
 .st { display: inline-flex; font-size: var(--fs-caption); font-weight: 600; padding: 2px 10px; border-radius: 999px; }
 .st-good { background: var(--green-soft); color: var(--green); }
 .st-bad { background: var(--red-soft); color: var(--red); }
 .st-none { background: var(--surface-2); color: var(--muted); }
 
-.eyebrow-plain { display: block; font-size: var(--fs-caption); font-weight: 600; color: var(--muted); }
 .prepare-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
 .prepare-row h3 { margin-bottom: 2px; }
+/* 상세 화면 카드 제목: '매물 추가'와 같은 크기 */
+#info-title, #ref-title, .prepare-row h3 { font-size: var(--fs-title-m); font-weight: 800; letter-spacing: -0.02em; }
 .prepare-row .help { margin: 0; }
 
 /* 계약 준비 화면 보정 */
@@ -928,3 +932,6 @@ body.intro-open { overflow: hidden; }
 .cv .tl-item.key .tl-title { color: var(--red); }
 .cv .timeline.key-only .tl-item:not(.key) { display: none; }
 .cv sup.src a { color: var(--muted); }
+
+/* 고른 집 카드: 판정·점수·필수 항목 상태를 같은 글씨 크기로 */
+.home-card .verdict-pill, .home-card .note, .home-card .ess-status { font-size: var(--fs-body-s); }

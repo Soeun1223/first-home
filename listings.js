@@ -480,15 +480,6 @@ function renderCompare() {
 
 /* ---------- 계약 준비 화면: 고른 집 요약 ---------- */
 
-// 매물 체크리스트의 필수 항목이 계약 준비의 어느 단계와 이어지는지
-const ESSENTIAL_STEP = {
-  'move-in-report': '3단계 전입신고',
-  'fixed-date': '2단계 확정일자·임대차 신고',
-  registry: '1단계 등기부등본 확인',
-  'owner-match': '2단계 임대인·소유자 확인',
-  residential: '1단계 건축물대장 확인',
-};
-
 function renderContractHome() {
   const el = $('#contract-home');
   const listing = state.checklist ? findListing(readChosen()) : null;
@@ -502,42 +493,30 @@ function renderContractHome() {
     return;
   }
   const s = scoreOf(listing);
-  const gate = state.checklist.tiers.find(isGate);
-  const STATUS = {
-    good: ['st-good', state.checklist.gateLabels.good],
-    bad: ['st-bad', state.checklist.gateLabels.bad],
-  };
-  const rows = gate.items.map((it) => {
-    const [cls, label] = STATUS[listing.answers[it.id]] || ['st-none', '미확인'];
-    return `<li><span class="st ${cls}">${esc(label)}</span>${esc(it.text)}${ESSENTIAL_STEP[it.id] ? ` <span class="where">→ ${esc(ESSENTIAL_STEP[it.id])}</span>` : ''}</li>`;
-  }).join('');
+  // 필수 항목: 다 확인했으면 '완료', 미확인·문제 있음이 있으면 '확인 필요'(누르면 체크리스트 열기)
+  const href = `#/listing/${encodeURIComponent(listing.id)}`;
+  const essDone = !s.unknown.length && !s.failed.length;
+  const ess = essDone
+    ? '<p class="ess-status ess-ok">필수 항목 확인 완료</p>'
+    : `<a class="ess-status ess-need" href="${href}">필수 항목 확인 필요 <span aria-hidden="true">→</span></a>`;
   const warn = s.verdict === 'fail'
     ? `<div class="notice notice-error"><p><strong>필수 항목에 ‘문제 있음’이 있어요.</strong> ${esc(s.failed.join(', '))}. 계약하기 전에 꼭 다시 확인하세요.</p></div>`
-    : s.verdict === 'hold'
-      ? `<p class="help" style="margin:0">아직 확인하지 않은 필수 항목은 아래 계약 준비 단계에서 확인할 수 있어요.</p>`
-      : '';
+    : '';
   el.innerHTML = `
     <section class="card home-card" aria-labelledby="home-title">
       <div class="lc-head">
-        <div>
-          <span class="eyebrow-plain">계약 준비 중인 집</span>
-          <h3 id="home-title" class="lc-name">${esc(listing.name)}</h3>
-        </div>
+        <h3 id="home-title" class="lc-name">${esc(listing.name)}</h3>
         <span class="grade" aria-label="${s.grade}등급">${s.grade}</span>
       </div>
       <div class="lc-tags">
         <span class="verdict-pill v-${s.verdict}">${VERDICTS[s.verdict].label}</span>
         <span class="note">체크리스트 ${s.score}점</span>
       </div>
+      ${ess}
       ${warn}
-      <div>
-        <p class="help" style="margin:0 0 8px">매물 체크리스트의 필수 확인 결과</p>
-        <ul class="ess">${rows}</ul>
-      </div>
       <div class="btn-row home-actions">
-        <a class="link" href="#/listing/${encodeURIComponent(listing.id)}">매물 체크리스트 열기</a>
+        ${essDone ? `<a class="link" href="${href}">매물 체크리스트 열기</a>` : ''}
         <a class="link" href="#/">다른 집 고르기</a>
-        <button type="button" class="link" data-refill>이 집 금액으로 다시 채우기</button>
       </div>
     </section>`;
 }
@@ -855,14 +834,6 @@ function bindEvents() {
   $('#prepare-btn').addEventListener('click', () => {
     const listing = findListing(currentId);
     if (listing) prepareContract(listing);
-  });
-
-  $('#contract-home').addEventListener('click', (e) => {
-    if (!e.target.closest('[data-refill]')) return;
-    const listing = findListing(readChosen());
-    if (!listing || !window.zipkimiContract) return;
-    window.zipkimiContract.fill(listing);
-    showToast('✓ 이 집 금액으로 다시 채웠어요');
   });
 
   $('#sort-select').addEventListener('change', (e) => {

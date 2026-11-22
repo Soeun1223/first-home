@@ -7,7 +7,7 @@
   <meta name="description" content="직접 본 집을 체크리스트로 비교하고, 고른 집으로 계약 준비부터 입주 후 관리까지 날짜순으로 확인하는 서비스">
   <link rel="icon" href="favicon.svg?v=20261116" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="style.css?v=20261122i">
+  <link rel="stylesheet" href="style.css?v=20261122l">
 </head>
 <body>
   <!-- 첫 화면 안내 (intro.js) -->
@@ -138,7 +138,7 @@
     <!-- 매물 상세(체크리스트) 화면 -->
     <div id="detail-view" hidden>
       <div class="detail-top">
-        <button type="button" id="back-btn" class="btn">← <span class="sm-hide">비교&nbsp;</span>목록</button>
+        <button type="button" id="back-btn" class="btn">← 목록</button>
         <div class="score-pill" aria-live="polite" id="detail-score"></div>
       </div>
       <h2 id="detail-title" tabindex="-1"></h2>
@@ -146,17 +146,39 @@
       <div class="detail-layout">
         <div class="detail-main">
           <section aria-labelledby="check-title">
-            <h3 id="check-title">체크리스트</h3>
+            <h3 id="check-title" class="visually-hidden">체크리스트</h3>
             <p class="autosave-note"><span class="autosave-dot" aria-hidden="true"></span><strong>자동 저장</strong> 고르는 즉시 저장돼요. 저장 버튼을 따로 누를 필요가 없어요.</p>
             <div id="checklist-body"></div>
           </section>
-          <div class="card prepare-row">
-            <div>
-              <h3>이 집으로 정했나요?</h3>
-              <p class="help">보증금·월세·관리비를 ② 계약 준비에 채우고, 계약일부터 입주 후까지 할 일을 날짜순으로 정리해요.</p>
-            </div>
-            <button type="button" class="btn btn-primary" id="prepare-btn">이 집으로 계약 준비</button>
-          </div>
+          <section id="ref-card" aria-labelledby="ref-title" class="card">
+            <h3 id="ref-title">위치 참고 정보</h3>
+            <p class="help">점수에는 반영되지 않고, 비교 카드 아래쪽에 참고로 보여 줘요. 모두 선택 입력이에요.</p>
+            <form id="ref-form" novalidate>
+              <div id="ref-form-error" class="notice notice-error" role="alert" hidden></div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="r-place">동네</label>
+                  <input id="r-place" name="place" type="text" maxlength="20" autocomplete="off"
+                         placeholder="예: 이문동" aria-describedby="r-place-help r-place-err">
+                  <p id="r-place-help" class="help">동 이름까지만 적어요. 번지·호수 같은 상세 주소는 적지 마세요.</p>
+                  <p id="r-place-err" class="field-error"></p>
+                </div>
+                <div class="field">
+                  <label for="r-school">학교까지 도보 (분)</label>
+                  <input id="r-school" name="school" type="text" inputmode="numeric" autocomplete="off"
+                         placeholder="예: 7" aria-describedby="r-school-err">
+                  <p id="r-school-err" class="field-error"></p>
+                </div>
+                <div class="field">
+                  <label for="r-station">가까운 역까지 도보 (분)</label>
+                  <input id="r-station" name="station" type="text" inputmode="numeric" autocomplete="off"
+                         placeholder="예: 5" aria-describedby="r-station-err">
+                  <p id="r-station-err" class="field-error"></p>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">참고 정보 저장</button>
+            </form>
+          </section>
         </div>
         <aside class="detail-side" aria-label="매물 요약과 정보">
           <section id="side-score" class="card side-score" aria-label="점수 요약"></section>
@@ -193,35 +215,13 @@
             </form>
           </details>
 
-          <section id="ref-card" aria-labelledby="ref-title" class="card">
-            <h3 id="ref-title">위치 참고 정보</h3>
-            <p class="help">점수에는 반영되지 않고, 비교 카드 아래쪽에 참고로 보여 줘요. 모두 선택 입력이에요.</p>
-            <form id="ref-form" novalidate>
-              <div id="ref-form-error" class="notice notice-error" role="alert" hidden></div>
-              <div class="field-grid">
-                <div class="field">
-                  <label for="r-place">동네</label>
-                  <input id="r-place" name="place" type="text" maxlength="20" autocomplete="off"
-                         placeholder="예: 이문동" aria-describedby="r-place-help r-place-err">
-                  <p id="r-place-help" class="help">동 이름까지만 적어요. 번지·호수 같은 상세 주소는 적지 마세요.</p>
-                  <p id="r-place-err" class="field-error"></p>
-                </div>
-                <div class="field">
-                  <label for="r-school">학교까지 도보 (분)</label>
-                  <input id="r-school" name="school" type="text" inputmode="numeric" autocomplete="off"
-                         placeholder="예: 7" aria-describedby="r-school-err">
-                  <p id="r-school-err" class="field-error"></p>
-                </div>
-                <div class="field">
-                  <label for="r-station">가까운 역까지 도보 (분)</label>
-                  <input id="r-station" name="station" type="text" inputmode="numeric" autocomplete="off"
-                         placeholder="예: 5" aria-describedby="r-station-err">
-                  <p id="r-station-err" class="field-error"></p>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">참고 정보 저장</button>
-            </form>
-          </section>
+          <div class="card prepare-row" id="prepare-card">
+            <div>
+              <h3>이 집으로 정했나요?</h3>
+              <p class="help">보증금·월세·관리비를 ② 계약 준비에 채우고, 계약일부터 입주 후까지 할 일을 날짜순으로 정리해요.</p>
+            </div>
+            <button type="button" class="btn btn-primary" id="prepare-btn">이 집으로 계약 준비</button>
+          </div>
         </aside>
       </div>
     </div>
@@ -574,7 +574,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="contract.js?v=20261122f"></script>
-  <script type="module" src="listings.js?v=20261122e"></script>
+  <script type="module" src="listings.js?v=20261122l"></script>
   <script type="module" src="intro.js?v=20261122a"></script>
 </body>
 </html>
